@@ -11,19 +11,28 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   
   // State
-  const [vitals, setVitals] = useSupabase('axell_vitals', {
+  const [vitals, setVitals, vitalsReady] = useSupabase('axell_vitals', {
     temperatures: [],
     waterIntake: [],
     diapers: []
   });
   
-  const [medications, setMedications] = useSupabase('axell_meds', {
+  const [medications, setMedications, medsReady] = useSupabase('axell_meds', {
     history: [],
     alarms: []
   });
   
-  const [gelTimer, setGelTimer] = useSupabase('axell_gel_timer', null);
-  const [rounds, setRounds] = useSupabase('axell_rounds', []);
+  const [gelTimer, setGelTimer, gelReady] = useSupabase('axell_gel_timer', null);
+  const [rounds, setRounds, roundsReady] = useSupabase('axell_rounds', []);
+
+  if (!vitalsReady || !medsReady || !gelReady || !roundsReady) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+        <h2 className="text-primary">Loading Data...</h2>
+        <p className="text-muted">Syncing with Supabase</p>
+      </div>
+    );
+  }
 
   // Alarm Checker
   useEffect(() => {

@@ -67,7 +67,7 @@ export default function MedicationsView({ medications, setMedications }) {
             onChange={(e) => setMedName(e.target.value)} 
           />
           <div className="grid-2 mt-2" style={{ marginTop: '12px' }}>
-            <button type="submit" className="btn btn-primary" onClick={handleAddMedication}>
+            <button type="submit" className="btn btn-primary">
               Log Taken Now
             </button>
             <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
