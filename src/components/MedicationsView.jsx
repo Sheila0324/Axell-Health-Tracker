@@ -86,10 +86,10 @@ export default function MedicationsView({ medications, setMedications }) {
 
       <div className="card">
         <h2 className="card-title">Alarms</h2>
-        {medications.alarms.length === 0 ? (
+        {(medications?.alarms || []).length === 0 ? (
           <p className="timestamp">No alarms set.</p>
         ) : (
-          medications.alarms
+          (medications?.alarms || [])
             .map(med => (
             <div key={med.id} className="list-item">
               <div>
@@ -106,10 +106,10 @@ export default function MedicationsView({ medications, setMedications }) {
 
       <div className="card">
         <h2 className="card-title">Recent History</h2>
-        {medications.history.length === 0 ? (
+        {(medications?.history || []).length === 0 ? (
           <p className="timestamp">No history.</p>
         ) : (
-          medications.history.slice(0, 10).map(med => (
+          (medications?.history || []).slice(0, 10).map(med => (
             <div key={med.id} className="list-item">
               <div>
                 <strong>{med.name}</strong>

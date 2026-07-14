@@ -109,7 +109,7 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
           <button className="btn btn-secondary" onClick={() => logRound('Doctor')}>Doctor Round</button>
         </div>
         <div style={{ marginTop: '16px' }}>
-          {rounds.slice(0, 10).map(r => (
+          {(rounds || []).slice(0, 10).map(r => (
             <div key={r.id} className="list-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                 <strong>{r.person}</strong>

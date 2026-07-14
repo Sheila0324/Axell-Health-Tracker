@@ -41,7 +41,7 @@ function App() {
       
       // Check Med Alarms
       let medsChanged = false;
-      const updatedAlarms = medications.alarms.map(alarm => {
+      const updatedAlarms = (medications?.alarms || []).map(alarm => {
         if (!alarm.notified && new Date(alarm.time) <= now) {
           sendNotification("Medication Due!", `It's time for ${alarm.name}`);
           medsChanged = true;
@@ -63,7 +63,7 @@ function App() {
     }, 10000); // Check every 10 seconds
     
     return () => clearInterval(interval);
-  }, [medications.alarms, gelTimer, setMedications, setGelTimer]);
+  }, [medications?.alarms, gelTimer, setMedications, setGelTimer]);
 
   const renderView = () => {
     switch (activeTab) {

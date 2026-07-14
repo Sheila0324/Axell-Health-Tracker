@@ -4,8 +4,10 @@ import { Activity, Thermometer, Droplets, Clock } from 'lucide-react';
 import { requestNotificationPermission } from '../utils/notifications';
 
 export default function DashboardView({ vitals, medications, gelTimer }) {
-  const latestTemp = vitals.temperatures[0];
-  const nextMedication = medications.alarms.find(m => new Date(m.time) > new Date()) || medications.alarms[0];
+  const safeTemperatures = vitals?.temperatures || [];
+  const safeAlarms = medications?.alarms || [];
+  const latestTemp = safeTemperatures[0];
+  const nextMedication = safeAlarms.find(m => new Date(m.time) > new Date()) || safeAlarms[0];
   
   const activateNotifications = () => {
     requestNotificationPermission().then(granted => {

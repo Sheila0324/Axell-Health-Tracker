@@ -72,7 +72,7 @@ export default function VitalsView({ vitals, setVitals }) {
           </div>
         </form>
         <div style={{ marginTop: '12px' }}>
-          {vitals.temperatures.slice(0, 10).map(t => (
+          {(vitals?.temperatures || []).slice(0, 10).map(t => (
             <div key={t.id} className="list-item">
               <strong>{t.value}°C</strong>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -100,7 +100,7 @@ export default function VitalsView({ vitals, setVitals }) {
           </div>
         </form>
         <div style={{ marginTop: '12px' }}>
-          {vitals.waterIntake.slice(0, 10).map(w => (
+          {(vitals?.waterIntake || []).slice(0, 10).map(w => (
             <div key={w.id} className="list-item">
               <strong>{w.value} ml</strong>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -121,7 +121,7 @@ export default function VitalsView({ vitals, setVitals }) {
           <button className="btn btn-secondary" onClick={() => logDiaper('Both')} style={{ gridColumn: 'span 2' }}>Both</button>
         </div>
         <div style={{ marginTop: '12px' }}>
-          {vitals.diapers.slice(0, 10).map(d => (
+          {(vitals?.diapers || []).slice(0, 10).map(d => (
             <div key={d.id} className="list-item">
               <strong>{d.type}</strong>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
