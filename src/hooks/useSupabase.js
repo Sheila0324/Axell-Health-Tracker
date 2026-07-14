@@ -9,26 +9,48 @@ export function useSupabase(key, initialValue) {
   latestValue.current = value;
 
   useEffect(() => {
+    let didFinish = false;
+
+    // Fallback: always unblock the UI after 8 seconds even if Supabase hangs
+    const timeout = setTimeout(() => {
+      if (!didFinish) {
+        console.warn(`[useSupabase] Timeout waiting for key="${key}". Using initial/cached value.`);
+        setIsReady(true);
+      }
+    }, 8000);
+
     const fetchInitialData = async () => {
-      const { data, error } = await supabase
-        .from('app_state')
-        .select('data')
-        .eq('id', key)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('app_state')
+          .select('data')
+          .eq('id', key)
+          .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching initial data from Supabase:', error);
-      }
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching initial data from Supabase:', error);
+        }
 
-      if (data && data.data) {
-        setValue(data.data);
-      } else {
-        await supabase.from('app_state').upsert({ id: key, data: initialValue });
+        if (data && data.data) {
+          setValue(data.data);
+        } else {
+          await supabase.from('app_state').upsert({ id: key, data: initialValue });
+        }
+      } catch (err) {
+        console.error(`[useSupabase] Failed to fetch key="${key}":`, err);
+      } finally {
+        didFinish = true;
+        clearTimeout(timeout);
+        setIsReady(true);
       }
-      setIsReady(true);
     };
 
     fetchInitialData();
+
+    return () => {
+      didFinish = true;
+      clearTimeout(timeout);
+    };
   }, [key]);
 
   useEffect(() => {
