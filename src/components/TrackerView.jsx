@@ -7,6 +7,8 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
   const [duration, setDuration] = useState('4');
   const [timeLeft, setTimeLeft] = useState(null);
 
+  const [roundNote, setRoundNote] = useState('');
+
   useEffect(() => {
     let interval;
     if (gelTimer) {
@@ -43,8 +45,9 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
   };
 
   const logRound = (person) => {
-    const newRound = { id: uuidv4(), person, time: new Date().toISOString() };
+    const newRound = { id: uuidv4(), person, note: roundNote, time: new Date().toISOString() };
     setRounds(prev => [newRound, ...prev]);
+    setRoundNote('');
   };
 
   return (
@@ -81,15 +84,26 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
 
       <div className="card">
         <h2 className="card-title"><Users size={20} className="text-primary" /> Doctor/Nurse Rounds</h2>
+        <div className="input-group">
+          <input 
+            type="text" 
+            placeholder="Add an optional note (e.g. Temp is normal)" 
+            value={roundNote}
+            onChange={(e) => setRoundNote(e.target.value)}
+          />
+        </div>
         <div className="grid-2">
           <button className="btn btn-secondary" onClick={() => logRound('Nurse')}>Nurse Round</button>
           <button className="btn btn-secondary" onClick={() => logRound('Doctor')}>Doctor Round</button>
         </div>
-        <div style={{ marginTop: '12px' }}>
+        <div style={{ marginTop: '16px' }}>
           {rounds.slice(0, 5).map(r => (
-            <div key={r.id} className="list-item">
-              <strong>{r.person}</strong>
-              <div className="timestamp">{format(parseISO(r.time), 'MMM d, hh:mm a')}</div>
+            <div key={r.id} className="list-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <strong>{r.person}</strong>
+                <div className="timestamp">{format(parseISO(r.time), 'MMM d, hh:mm a')}</div>
+              </div>
+              {r.note && <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px' }}>{r.note}</div>}
             </div>
           ))}
         </div>
