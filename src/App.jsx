@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Pill, Activity, Clock } from 'lucide-react';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { useSupabase } from './hooks/useSupabase';
 import DashboardView from './components/DashboardView';
 import MedicationsView from './components/MedicationsView';
 import VitalsView from './components/VitalsView';
@@ -11,19 +11,19 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   
   // State
-  const [vitals, setVitals] = useLocalStorage('axell_vitals', {
+  const [vitals, setVitals] = useSupabase('axell_vitals', {
     temperatures: [],
     waterIntake: [],
     diapers: []
   });
   
-  const [medications, setMedications] = useLocalStorage('axell_meds', {
+  const [medications, setMedications] = useSupabase('axell_meds', {
     history: [],
     alarms: []
   });
   
-  const [gelTimer, setGelTimer] = useLocalStorage('axell_gel_timer', null);
-  const [rounds, setRounds] = useLocalStorage('axell_rounds', []);
+  const [gelTimer, setGelTimer] = useSupabase('axell_gel_timer', null);
+  const [rounds, setRounds] = useSupabase('axell_rounds', []);
 
   // Alarm Checker
   useEffect(() => {
