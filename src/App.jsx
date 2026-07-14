@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Pill, Activity, Clock } from 'lucide-react';
-import { useSupabase } from './hooks/useSupabase';
+import { useFirestore } from './hooks/useFirestore';
 import DashboardView from './components/DashboardView';
 import MedicationsView from './components/MedicationsView';
 import VitalsView from './components/VitalsView';
@@ -11,19 +11,19 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   
   // State
-  const [vitals, setVitals, vitalsReady] = useSupabase('axell_vitals', {
+  const [vitals, setVitals, vitalsReady] = useFirestore('axell_vitals', {
     temperatures: [],
     waterIntake: [],
     diapers: []
   });
   
-  const [medications, setMedications, medsReady] = useSupabase('axell_meds', {
+  const [medications, setMedications, medsReady] = useFirestore('axell_meds', {
     history: [],
     alarms: []
   });
   
-  const [gelTimer, setGelTimer, gelReady] = useSupabase('axell_gel_timer', null);
-  const [rounds, setRounds, roundsReady] = useSupabase('axell_rounds', []);
+  const [gelTimer, setGelTimer, gelReady] = useFirestore('axell_gel_timer', null);
+  const [rounds, setRounds, roundsReady] = useFirestore('axell_rounds', []);
 
   if (!vitalsReady || !medsReady || !gelReady || !roundsReady) {
     return (
