@@ -159,14 +159,14 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
                       onClick={() => setPromptData({ type: 'edit_round', id: r.id, text: 'Edit visit note:', value: r.note || '' })}
                       title="Edit note"
                     >
-                      <Edit2 size={14} className="text-primary" />
+                      <Edit2 size={14} className="text-white" />
                     </button>
                     <button 
                       style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', padding: '2px' }}
                       onClick={() => setPromptData({ type: 'delete_round', id: r.id, text: 'Delete this visit entry?' })}
                       title="Delete entry"
                     >
-                      <Trash2 size={14} className="text-danger" />
+                      <Trash2 size={14} className="text-white" />
                     </button>
                   </div>
                 </div>

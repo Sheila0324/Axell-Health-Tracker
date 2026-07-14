@@ -154,7 +154,7 @@ export default function MedicationsView({ medications, setMedications }) {
                 </span>
                 <Trash2 
                   size={16} 
-                  className="text-danger" 
+                  className="text-white" 
                   style={{ cursor: 'pointer', transition: 'color 0.2s' }} 
                   onClick={() => setPromptData({ type: 'delete_alarm', id: med.id, text: `Remove alarm for ${med.name}?` })} 
                 />
@@ -185,14 +185,14 @@ export default function MedicationsView({ medications, setMedications }) {
                   onClick={() => setPromptData({ type: 'edit_history', id: med.id, text: 'Edit Medication Log Name', value: med.name })}
                   title="Edit entry"
                 >
-                  <Edit2 size={16} className="text-primary" />
+                  <Edit2 size={16} className="text-white" />
                 </button>
                 <button 
                   style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', padding: '4px' }} 
                   onClick={() => setPromptData({ type: 'delete_history', id: med.id, text: 'Delete this administration record?' })}
                   title="Delete entry"
                 >
-                  <Trash2 size={16} className="text-danger" />
+                  <Trash2 size={16} className="text-white" />
                 </button>
               </div>
             </div>

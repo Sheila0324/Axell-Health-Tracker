@@ -5,7 +5,6 @@ import DashboardView from './components/DashboardView';
 import MedicationsView from './components/MedicationsView';
 import VitalsView from './components/VitalsView';
 import TrackerView from './components/TrackerView';
-import ThemeToggle from './components/ThemeToggle';
 import { sendNotification } from './utils/notifications';
 
 function App() {
@@ -89,7 +88,6 @@ function App() {
     <div className="app-container">
       <header className="header">
         <h1>Axell Tracker</h1>
-        <ThemeToggle />
       </header>
 
       <main style={{ paddingBottom: '100px' }}>

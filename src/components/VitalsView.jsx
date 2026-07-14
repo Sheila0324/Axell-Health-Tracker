@@ -120,13 +120,13 @@ export default function VitalsView({ vitals, setVitals }) {
                   <span className="timestamp">{format(parseISO(t.time), 'hh:mm a')}</span>
                   <Edit2 
                     size={15} 
-                    className="text-primary" 
+                    className="text-white" 
                     style={{ cursor: 'pointer' }} 
                     onClick={() => setPromptData({ type: 'edit_temp', id: t.id, text: 'Edit temperature (°C):', value: t.value })} 
                   />
                   <Trash2 
                     size={15} 
-                    className="text-danger" 
+                    className="text-white" 
                     style={{ cursor: 'pointer' }} 
                     onClick={() => setPromptData({ type: 'delete_temp', id: t.id, text: 'Delete this temperature record?' })} 
                   />
@@ -192,13 +192,13 @@ export default function VitalsView({ vitals, setVitals }) {
                 <span className="timestamp">{format(parseISO(w.time), 'hh:mm a')}</span>
                 <Edit2 
                   size={15} 
-                  className="text-primary" 
+                  className="text-white" 
                   style={{ cursor: 'pointer' }} 
                   onClick={() => setPromptData({ type: 'edit_water', id: w.id, text: 'Edit water intake (ml):', value: w.value })} 
                 />
                 <Trash2 
                   size={15} 
-                  className="text-danger" 
+                  className="text-white" 
                   style={{ cursor: 'pointer' }} 
                   onClick={() => setPromptData({ type: 'delete_water', id: w.id, text: 'Delete this water intake record?' })} 
                 />
@@ -249,7 +249,7 @@ export default function VitalsView({ vitals, setVitals }) {
                   <span className="timestamp">{format(parseISO(d.time), 'hh:mm a')}</span>
                   <Trash2 
                     size={15} 
-                    className="text-danger" 
+                    className="text-white" 
                     style={{ cursor: 'pointer' }} 
                     onClick={() => setPromptData({ type: 'delete_diaper', id: d.id, text: `Delete this ${d.type} diaper log?` })} 
                   />
