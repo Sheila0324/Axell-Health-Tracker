@@ -8,6 +8,7 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
   const [timeLeft, setTimeLeft] = useState(null);
 
   const [roundNote, setRoundNote] = useState('');
+  const [promptData, setPromptData] = useState(null);
 
   useEffect(() => {
     let interval;
@@ -50,17 +51,15 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
     setRoundNote('');
   };
 
-  const deleteRound = (id) => {
-    if (window.confirm('Delete this round log?')) {
-      setRounds(prev => prev.filter(r => r.id !== id));
+  const confirmAction = () => {
+    if (promptData.type === 'delete_round') {
+      setRounds(prev => prev.filter(r => r.id !== promptData.id));
+    } else if (promptData.type === 'edit_round') {
+      if (promptData.value !== undefined) {
+        setRounds(prev => prev.map(r => r.id === promptData.id ? { ...r, note: promptData.value } : r));
+      }
     }
-  };
-
-  const editRoundNote = (id, currentNote) => {
-    const newNote = window.prompt('Edit note:', currentNote || '');
-    if (newNote !== null) { // User didn't cancel
-      setRounds(prev => prev.map(r => r.id === id ? { ...r, note: newNote } : r));
-    }
+    setPromptData(null);
   };
 
   return (
@@ -116,8 +115,8 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
                 <strong>{r.person}</strong>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span className="timestamp">{format(parseISO(r.time), 'MMM d, hh:mm a')}</span>
-                  <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => editRoundNote(r.id, r.note)} />
-                  <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteRound(r.id)} />
+                  <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'edit_round', id: r.id, text: 'Edit note:', value: r.note || '' })} />
+                  <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'delete_round', id: r.id, text: 'Delete this round log?' })} />
                 </div>
               </div>
               {r.note && <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px' }}>{r.note}</div>}
@@ -125,6 +124,27 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
           ))}
         </div>
       </div>
+
+      {promptData && (
+        <div className="modal-backdrop">
+          <div className="card modal-content">
+            <p style={{ marginBottom: '16px', fontWeight: 'bold' }}>{promptData.text}</p>
+            {promptData.type.startsWith('edit') && (
+              <input 
+                type="text"
+                className="input-group"
+                style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                value={promptData.value} 
+                onChange={e => setPromptData({ ...promptData, value: e.target.value })} 
+              />
+            )}
+            <div className="grid-2">
+              <button className="btn btn-secondary" onClick={() => setPromptData(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={confirmAction}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

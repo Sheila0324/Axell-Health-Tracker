@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 export default function VitalsView({ vitals, setVitals }) {
   const [temp, setTemp] = useState('');
   const [water, setWater] = useState('');
+  const [promptData, setPromptData] = useState(null);
 
   const logTemp = (e) => {
     e.preventDefault();
@@ -28,42 +29,29 @@ export default function VitalsView({ vitals, setVitals }) {
     setVitals(prev => ({ ...prev, diapers: [newDiaper, ...prev.diapers] }));
   };
 
-  const deleteTemp = (id) => {
-    if (window.confirm('Delete this temperature log?')) {
-      setVitals(prev => ({ ...prev, temperatures: prev.temperatures.filter(t => t.id !== id) }));
+  const confirmAction = () => {
+    if (promptData.type === 'delete_temp') {
+      setVitals(prev => ({ ...prev, temperatures: prev.temperatures.filter(t => t.id !== promptData.id) }));
+    } else if (promptData.type === 'edit_temp') {
+      if (promptData.value && !isNaN(promptData.value)) {
+        setVitals(prev => ({
+          ...prev,
+          temperatures: prev.temperatures.map(t => t.id === promptData.id ? { ...t, value: promptData.value } : t)
+        }));
+      }
+    } else if (promptData.type === 'delete_water') {
+      setVitals(prev => ({ ...prev, waterIntake: prev.waterIntake.filter(w => w.id !== promptData.id) }));
+    } else if (promptData.type === 'edit_water') {
+      if (promptData.value && !isNaN(promptData.value)) {
+        setVitals(prev => ({
+          ...prev,
+          waterIntake: prev.waterIntake.map(w => w.id === promptData.id ? { ...w, value: promptData.value } : w)
+        }));
+      }
+    } else if (promptData.type === 'delete_diaper') {
+      setVitals(prev => ({ ...prev, diapers: prev.diapers.filter(d => d.id !== promptData.id) }));
     }
-  };
-
-  const editTemp = (id, currentVal) => {
-    const newVal = window.prompt('Edit temperature (°C):', currentVal);
-    if (newVal && !isNaN(newVal)) {
-      setVitals(prev => ({
-        ...prev,
-        temperatures: prev.temperatures.map(t => t.id === id ? { ...t, value: newVal } : t)
-      }));
-    }
-  };
-
-  const deleteWater = (id) => {
-    if (window.confirm('Delete this water log?')) {
-      setVitals(prev => ({ ...prev, waterIntake: prev.waterIntake.filter(w => w.id !== id) }));
-    }
-  };
-
-  const editWater = (id, currentVal) => {
-    const newVal = window.prompt('Edit water intake (ml):', currentVal);
-    if (newVal && !isNaN(newVal)) {
-      setVitals(prev => ({
-        ...prev,
-        waterIntake: prev.waterIntake.map(w => w.id === id ? { ...w, value: newVal } : w)
-      }));
-    }
-  };
-
-  const deleteDiaper = (id) => {
-    if (window.confirm('Delete this diaper log?')) {
-      setVitals(prev => ({ ...prev, diapers: prev.diapers.filter(d => d.id !== id) }));
-    }
+    setPromptData(null);
   };
 
   return (
@@ -89,8 +77,8 @@ export default function VitalsView({ vitals, setVitals }) {
               <strong>{t.value}°C</strong>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span className="timestamp">{format(parseISO(t.time), 'hh:mm a')}</span>
-                <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => editTemp(t.id, t.value)} />
-                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteTemp(t.id)} />
+                <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'edit_temp', id: t.id, text: 'Edit temperature (°C):', value: t.value })} />
+                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'delete_temp', id: t.id, text: 'Delete this temperature log?' })} />
               </div>
             </div>
           ))}
@@ -117,8 +105,8 @@ export default function VitalsView({ vitals, setVitals }) {
               <strong>{w.value} ml</strong>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span className="timestamp">{format(parseISO(w.time), 'hh:mm a')}</span>
-                <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => editWater(w.id, w.value)} />
-                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteWater(w.id)} />
+                <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'edit_water', id: w.id, text: 'Edit water intake (ml):', value: w.value })} />
+                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'delete_water', id: w.id, text: 'Delete this water log?' })} />
               </div>
             </div>
           ))}
@@ -138,12 +126,34 @@ export default function VitalsView({ vitals, setVitals }) {
               <strong>{d.type}</strong>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span className="timestamp">{format(parseISO(d.time), 'hh:mm a')}</span>
-                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteDiaper(d.id)} />
+                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'delete_diaper', id: d.id, text: 'Delete this diaper log?' })} />
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {promptData && (
+        <div className="modal-backdrop">
+          <div className="card modal-content">
+            <p style={{ marginBottom: '16px', fontWeight: 'bold' }}>{promptData.text}</p>
+            {promptData.type.startsWith('edit') && (
+              <input 
+                type="number"
+                step="0.1"
+                className="input-group"
+                style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                value={promptData.value} 
+                onChange={e => setPromptData({ ...promptData, value: e.target.value })} 
+              />
+            )}
+            <div className="grid-2">
+              <button className="btn btn-secondary" onClick={() => setPromptData(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={confirmAction}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

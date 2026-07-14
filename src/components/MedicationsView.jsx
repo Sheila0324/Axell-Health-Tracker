@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Pill, Plus, Bell, Trash2, Edit2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import { sendNotification } from '../utils/notifications';
 
 export default function MedicationsView({ medications, setMedications }) {
   const [medName, setMedName] = useState('');
   const [alarmTime, setAlarmTime] = useState('');
+  const [promptData, setPromptData] = useState(null);
 
   const handleAddMedication = (e) => {
     e.preventDefault();
@@ -38,26 +38,20 @@ export default function MedicationsView({ medications, setMedications }) {
     alert(`Alarm set for ${medName} at ${format(today, 'hh:mm a')}`);
   };
 
-  const deleteAlarm = (id) => {
-    if (window.confirm('Delete this alarm?')) {
-      setMedications(prev => ({ ...prev, alarms: prev.alarms.filter(a => a.id !== id) }));
+  const confirmAction = () => {
+    if (promptData.type === 'delete_alarm') {
+      setMedications(prev => ({ ...prev, alarms: prev.alarms.filter(a => a.id !== promptData.id) }));
+    } else if (promptData.type === 'delete_history') {
+      setMedications(prev => ({ ...prev, history: prev.history.filter(h => h.id !== promptData.id) }));
+    } else if (promptData.type === 'edit_history') {
+      if (promptData.value && promptData.value.trim() !== '') {
+        setMedications(prev => ({
+          ...prev,
+          history: prev.history.map(h => h.id === promptData.id ? { ...h, name: promptData.value.trim() } : h)
+        }));
+      }
     }
-  };
-
-  const deleteHistory = (id) => {
-    if (window.confirm('Delete this log?')) {
-      setMedications(prev => ({ ...prev, history: prev.history.filter(h => h.id !== id) }));
-    }
-  };
-
-  const editHistory = (id, currentName) => {
-    const newName = window.prompt('Edit medication name:', currentName);
-    if (newName && newName.trim() !== '') {
-      setMedications(prev => ({
-        ...prev,
-        history: prev.history.map(h => h.id === id ? { ...h, name: newName.trim() } : h)
-      }));
-    }
+    setPromptData(null);
   };
 
   return (
@@ -104,7 +98,7 @@ export default function MedicationsView({ medications, setMedications }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span className="timestamp">{format(parseISO(med.time), 'hh:mm a')}</span>
-                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteAlarm(med.id)} />
+                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'delete_alarm', id: med.id, text: 'Delete this alarm?' })} />
               </div>
             </div>
           ))
@@ -123,13 +117,33 @@ export default function MedicationsView({ medications, setMedications }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span className="timestamp">{format(parseISO(med.time), 'MMM d, hh:mm a')}</span>
-                <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => editHistory(med.id, med.name)} />
-                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteHistory(med.id)} />
+                <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'edit_history', id: med.id, text: 'Edit medication name:', value: med.name })} />
+                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => setPromptData({ type: 'delete_history', id: med.id, text: 'Delete this log?' })} />
               </div>
             </div>
           ))
         )}
       </div>
+
+      {promptData && (
+        <div className="modal-backdrop">
+          <div className="card modal-content">
+            <p style={{ marginBottom: '16px', fontWeight: 'bold' }}>{promptData.text}</p>
+            {promptData.type.startsWith('edit') && (
+              <input 
+                className="input-group"
+                style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                value={promptData.value} 
+                onChange={e => setPromptData({ ...promptData, value: e.target.value })} 
+              />
+            )}
+            <div className="grid-2">
+              <button className="btn btn-secondary" onClick={() => setPromptData(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={confirmAction}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
