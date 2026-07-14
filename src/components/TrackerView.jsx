@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Snowflake, Users, Play, Square } from 'lucide-react';
+import { Snowflake, Users, Play, Square, Trash2, Edit2 } from 'lucide-react';
 import { format, differenceInSeconds, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -50,6 +50,19 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
     setRoundNote('');
   };
 
+  const deleteRound = (id) => {
+    if (window.confirm('Delete this round log?')) {
+      setRounds(prev => prev.filter(r => r.id !== id));
+    }
+  };
+
+  const editRoundNote = (id, currentNote) => {
+    const newNote = window.prompt('Edit note:', currentNote || '');
+    if (newNote !== null) { // User didn't cancel
+      setRounds(prev => prev.map(r => r.id === id ? { ...r, note: newNote } : r));
+    }
+  };
+
   return (
     <div>
       <div className="card">
@@ -97,11 +110,15 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
           <button className="btn btn-secondary" onClick={() => logRound('Doctor')}>Doctor Round</button>
         </div>
         <div style={{ marginTop: '16px' }}>
-          {rounds.slice(0, 5).map(r => (
+          {rounds.slice(0, 10).map(r => (
             <div key={r.id} className="list-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                 <strong>{r.person}</strong>
-                <div className="timestamp">{format(parseISO(r.time), 'MMM d, hh:mm a')}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span className="timestamp">{format(parseISO(r.time), 'MMM d, hh:mm a')}</span>
+                  <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => editRoundNote(r.id, r.note)} />
+                  <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteRound(r.id)} />
+                </div>
               </div>
               {r.note && <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px' }}>{r.note}</div>}
             </div>

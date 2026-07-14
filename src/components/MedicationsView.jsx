@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pill, Plus, Bell } from 'lucide-react';
+import { Pill, Plus, Bell, Trash2, Edit2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { sendNotification } from '../utils/notifications';
@@ -23,7 +23,6 @@ export default function MedicationsView({ medications, setMedications }) {
     e.preventDefault();
     if (!medName || !alarmTime) return;
     
-    // Combine today's date with the selected time
     const today = new Date();
     const [hours, minutes] = alarmTime.split(':');
     today.setHours(hours, minutes, 0, 0);
@@ -37,6 +36,28 @@ export default function MedicationsView({ medications, setMedications }) {
     setAlarmTime('');
     
     alert(`Alarm set for ${medName} at ${format(today, 'hh:mm a')}`);
+  };
+
+  const deleteAlarm = (id) => {
+    if (window.confirm('Delete this alarm?')) {
+      setMedications(prev => ({ ...prev, alarms: prev.alarms.filter(a => a.id !== id) }));
+    }
+  };
+
+  const deleteHistory = (id) => {
+    if (window.confirm('Delete this log?')) {
+      setMedications(prev => ({ ...prev, history: prev.history.filter(h => h.id !== id) }));
+    }
+  };
+
+  const editHistory = (id, currentName) => {
+    const newName = window.prompt('Edit medication name:', currentName);
+    if (newName && newName.trim() !== '') {
+      setMedications(prev => ({
+        ...prev,
+        history: prev.history.map(h => h.id === id ? { ...h, name: newName.trim() } : h)
+      }));
+    }
   };
 
   return (
@@ -81,7 +102,10 @@ export default function MedicationsView({ medications, setMedications }) {
               <div>
                 <strong>{med.name}</strong>
               </div>
-              <div className="timestamp">{format(parseISO(med.time), 'hh:mm a')}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span className="timestamp">{format(parseISO(med.time), 'hh:mm a')}</span>
+                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteAlarm(med.id)} />
+              </div>
             </div>
           ))
         )}
@@ -97,7 +121,11 @@ export default function MedicationsView({ medications, setMedications }) {
               <div>
                 <strong>{med.name}</strong>
               </div>
-              <div className="timestamp">{format(parseISO(med.time), 'MMM d, hh:mm a')}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span className="timestamp">{format(parseISO(med.time), 'MMM d, hh:mm a')}</span>
+                <Edit2 size={16} className="text-primary" style={{ cursor: 'pointer' }} onClick={() => editHistory(med.id, med.name)} />
+                <Trash2 size={16} className="text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteHistory(med.id)} />
+              </div>
             </div>
           ))
         )}
