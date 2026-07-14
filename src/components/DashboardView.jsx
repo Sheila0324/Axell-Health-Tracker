@@ -1,30 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO, differenceInSeconds } from 'date-fns';
-import { Activity, Thermometer, Droplets, Clock, Bell, CheckCircle } from 'lucide-react';
-import { requestNotificationPermission } from '../utils/notifications';
+import { Thermometer, Droplets, Clock } from 'lucide-react';
 
 export default function DashboardView({ vitals, medications, gelTimer }) {
-  const [notificationPermission, setNotificationPermission] = useState('default');
   const [gelProgress, setGelProgress] = useState(100);
   const [gelTimeLeft, setGelTimeLeft] = useState('');
-
-  // Check initial notification status
-  useEffect(() => {
-    if ('Notification' in window) {
-      setNotificationPermission(Notification.permission);
-    }
-  }, []);
-
-  const activateNotifications = () => {
-    requestNotificationPermission().then(granted => {
-      if (granted) {
-        setNotificationPermission('granted');
-        alert("Notifications enabled! Keep this tab open to receive alarms.");
-      } else {
-        setNotificationPermission('denied');
-      }
-    });
-  };
 
   const safeTemperatures = vitals?.temperatures || [];
   const safeAlarms = medications?.alarms || [];
@@ -84,26 +64,6 @@ export default function DashboardView({ vitals, medications, gelTimer }) {
 
   return (
     <div>
-      {/* Quick Action Alerts */}
-      <div className="card">
-        <h2 className="card-title">
-          <Activity size={20} className="text-primary" /> 
-          Quick Controls
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {notificationPermission === 'granted' ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-              <CheckCircle size={20} className="text-success" />
-              <span style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--success)' }}>Push Alarms & Audio Beeps Active</span>
-            </div>
-          ) : (
-            <button className="btn btn-primary" onClick={activateNotifications} id="enable-notifications-btn">
-              <Bell size={18} />
-              Enable Reminders & Audio Alarms
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Grid: Vitals & Meds */}
       <div className="grid-2-no-pad" style={{ padding: '0 24px' }}>
