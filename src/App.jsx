@@ -1,45 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Pill, Activity, Clock } from 'lucide-react';
-import { useFirestore } from './hooks/useFirestore';
+import { useSupabase } from './hooks/useSupabase';
 import DashboardView from './components/DashboardView';
 import MedicationsView from './components/MedicationsView';
 import VitalsView from './components/VitalsView';
 import TrackerView from './components/TrackerView';
+import ThemeToggle from './components/ThemeToggle';
 import { sendNotification } from './utils/notifications';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   
-  // State
-  const [vitals, setVitals, vitalsReady] = useFirestore('axell_vitals', {
+  // State from Supabase
+  const [vitals, setVitals, vitalsReady] = useSupabase('axell_vitals', {
     temperatures: [],
     waterIntake: [],
     diapers: []
   });
   
-  const [medications, setMedications, medsReady] = useFirestore('axell_meds', {
+  const [medications, setMedications, medsReady] = useSupabase('axell_meds', {
     history: [],
     alarms: []
   });
   
-  const [gelTimer, setGelTimer, gelReady] = useFirestore('axell_gel_timer', null);
-  const [rounds, setRounds, roundsReady] = useFirestore('axell_rounds', []);
-
-  if (!vitalsReady || !medsReady || !gelReady || !roundsReady) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-        <h2 className="text-primary">Loading Data...</h2>
-        <p className="text-muted">Syncing with Supabase</p>
-      </div>
-    );
-  }
+  const [gelTimer, setGelTimer, gelReady] = useSupabase('axell_gel_timer', null);
+  const [rounds, setRounds, roundsReady] = useSupabase('axell_rounds', []);
 
   // Alarm Checker
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
       
-      // Check Med Alarms
+      // Check Medication Alarms
       let medsChanged = false;
       const updatedAlarms = (medications?.alarms || []).map(alarm => {
         if (!alarm.notified && new Date(alarm.time) <= now) {
@@ -60,10 +52,23 @@ function App() {
         setGelTimer(prev => ({ ...prev, notified: true }));
       }
       
-    }, 10000); // Check every 10 seconds
+    }, 5000); // Check every 5 seconds for snappier notifications
     
     return () => clearInterval(interval);
   }, [medications?.alarms, gelTimer, setMedications, setGelTimer]);
+
+  if (!vitalsReady || !medsReady || !gelReady || !roundsReady) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', background: 'var(--background)' }}>
+        <div className="progress-ring-container" style={{ margin: '0 0 20px 0' }}>
+          <div className="loading-dots" style={{ fontSize: '2rem', color: 'var(--primary)', fontWeight: 'bold' }}>
+            Syncing<span>.</span><span>.</span><span>.</span>
+          </div>
+        </div>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '600' }}>Connecting to Supabase Database</p>
+      </div>
+    );
+  }
 
   const renderView = () => {
     switch (activeTab) {
@@ -84,6 +89,7 @@ function App() {
     <div className="app-container">
       <header className="header">
         <h1>Axell Tracker</h1>
+        <ThemeToggle />
       </header>
 
       <main style={{ paddingBottom: '100px' }}>
@@ -91,20 +97,20 @@ function App() {
       </main>
 
       <nav className="bottom-nav">
-        <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-          <Home size={24} />
+        <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')} id="nav-btn-dashboard">
+          <Home size={22} />
           <span>Home</span>
         </button>
-        <button className={`nav-item ${activeTab === 'meds' ? 'active' : ''}`} onClick={() => setActiveTab('meds')}>
-          <Pill size={24} />
+        <button className={`nav-item ${activeTab === 'meds' ? 'active' : ''}`} onClick={() => setActiveTab('meds')} id="nav-btn-meds">
+          <Pill size={22} />
           <span>Meds</span>
         </button>
-        <button className={`nav-item ${activeTab === 'vitals' ? 'active' : ''}`} onClick={() => setActiveTab('vitals')}>
-          <Activity size={24} />
+        <button className={`nav-item ${activeTab === 'vitals' ? 'active' : ''}`} onClick={() => setActiveTab('vitals')} id="nav-btn-vitals">
+          <Activity size={22} />
           <span>Vitals</span>
         </button>
-        <button className={`nav-item ${activeTab === 'tracker' ? 'active' : ''}`} onClick={() => setActiveTab('tracker')}>
-          <Clock size={24} />
+        <button className={`nav-item ${activeTab === 'tracker' ? 'active' : ''}`} onClick={() => setActiveTab('tracker')} id="nav-btn-tracker">
+          <Clock size={22} />
           <span>Track</span>
         </button>
       </nav>
