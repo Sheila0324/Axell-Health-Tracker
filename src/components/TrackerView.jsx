@@ -1,0 +1,99 @@
+import React, { useState, useEffect } from 'react';
+import { Snowflake, Users, Play, Square } from 'lucide-react';
+import { format, differenceInSeconds, parseISO } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
+
+export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }) {
+  const [duration, setDuration] = useState('4');
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    let interval;
+    if (gelTimer) {
+      interval = setInterval(() => {
+        const diff = differenceInSeconds(parseISO(gelTimer.expiresAt), new Date());
+        if (diff <= 0) {
+          setTimeLeft('Expired!');
+        } else {
+          const h = Math.floor(diff / 3600);
+          const m = Math.floor((diff % 3600) / 60);
+          const s = diff % 60;
+          setTimeLeft(`${h}h ${m}m ${s}s`);
+        }
+      }, 1000);
+    } else {
+      setTimeLeft(null);
+    }
+    return () => clearInterval(interval);
+  }, [gelTimer]);
+
+  const startGel = () => {
+    const now = new Date();
+    const expires = new Date(now.getTime() + parseInt(duration) * 3600 * 1000);
+    setGelTimer({
+      id: uuidv4(),
+      appliedAt: now.toISOString(),
+      expiresAt: expires.toISOString(),
+      notified: false
+    });
+  };
+
+  const stopGel = () => {
+    setGelTimer(null);
+  };
+
+  const logRound = (person) => {
+    const newRound = { id: uuidv4(), person, time: new Date().toISOString() };
+    setRounds(prev => [newRound, ...prev]);
+  };
+
+  return (
+    <div>
+      <div className="card">
+        <h2 className="card-title"><Snowflake size={20} className="text-secondary" /> Cooling Fever Gel</h2>
+        {!gelTimer ? (
+          <div className="input-group">
+            <label>Duration (Hours)</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <select value={duration} onChange={e => setDuration(e.target.value)} style={{ flex: 1 }}>
+                <option value="2">2 Hours</option>
+                <option value="4">4 Hours</option>
+                <option value="6">6 Hours</option>
+                <option value="8">8 Hours</option>
+              </select>
+              <button className="btn btn-primary" onClick={startGel} style={{ width: 'auto' }}>
+                <Play size={16} /> Start
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="timer-display">{timeLeft}</div>
+            <p className="timestamp" style={{ textAlign: 'center', marginBottom: '16px' }}>
+              Applied at {format(parseISO(gelTimer.appliedAt), 'hh:mm a')}
+            </p>
+            <button className="btn btn-danger" onClick={stopGel}>
+              <Square size={16} /> Stop Timer
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h2 className="card-title"><Users size={20} className="text-primary" /> Doctor/Nurse Rounds</h2>
+        <div className="grid-2">
+          <button className="btn btn-secondary" onClick={() => logRound('Nurse')}>Nurse Round</button>
+          <button className="btn btn-secondary" onClick={() => logRound('Doctor')}>Doctor Round</button>
+        </div>
+        <div style={{ marginTop: '12px' }}>
+          {rounds.slice(0, 5).map(r => (
+            <div key={r.id} className="list-item">
+              <strong>{r.person}</strong>
+              <div className="timestamp">{format(parseISO(r.time), 'MMM d, hh:mm a')}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
