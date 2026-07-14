@@ -85,12 +85,11 @@ export default function MedicationsView({ medications, setMedications }) {
       </div>
 
       <div className="card">
-        <h2 className="card-title">Upcoming Alarms</h2>
-        {medications.alarms.filter(a => new Date(a.time) > new Date()).length === 0 ? (
-          <p className="timestamp">No upcoming alarms.</p>
+        <h2 className="card-title">Alarms</h2>
+        {medications.alarms.length === 0 ? (
+          <p className="timestamp">No alarms set.</p>
         ) : (
           medications.alarms
-            .filter(a => new Date(a.time) > new Date())
             .map(med => (
             <div key={med.id} className="list-item">
               <div>
