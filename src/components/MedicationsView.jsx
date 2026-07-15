@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pill, Plus, Bell, Trash2, Edit2, Calendar } from 'lucide-react';
+import { Pill, Plus, Bell, Trash2, Edit2, Calendar, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,6 +7,14 @@ export default function MedicationsView({ medications, setMedications }) {
   const [medName, setMedName] = useState('');
   const [alarmTime, setAlarmTime] = useState('');
   const [promptData, setPromptData] = useState(null);
+
+  // Custom date/time log
+  const [showCustomLog, setShowCustomLog] = useState(false);
+  const [customMedName, setCustomMedName] = useState('');
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const nowTimeStr = format(new Date(), 'HH:mm');
+  const [customDate, setCustomDate] = useState(todayStr);
+  const [customTime, setCustomTime] = useState(nowTimeStr);
 
   const handleAddMedication = (e) => {
     e.preventDefault();
@@ -17,6 +25,23 @@ export default function MedicationsView({ medications, setMedications }) {
       history: [newMed, ...(prev?.history || [])]
     }));
     setMedName('');
+  };
+
+  const handleAddCustomLog = (e) => {
+    e.preventDefault();
+    if (!customMedName.trim() || !customDate || !customTime) return;
+    const dateTimeStr = `${customDate}T${customTime}:00`;
+    const loggedAt = new Date(dateTimeStr);
+    if (isNaN(loggedAt.getTime())) return;
+    const newMed = { id: uuidv4(), name: customMedName.trim(), time: loggedAt.toISOString() };
+    setMedications(prev => ({
+      ...prev,
+      history: [newMed, ...(prev?.history || [])].sort((a, b) => new Date(b.time) - new Date(a.time))
+    }));
+    setCustomMedName('');
+    setCustomDate(todayStr);
+    setCustomTime(nowTimeStr);
+    setShowCustomLog(false);
   };
 
   const handleAddAlarm = (e) => {
@@ -95,6 +120,92 @@ export default function MedicationsView({ medications, setMedications }) {
           >
             <Plus size={18} /> Log Taken Now
           </button>
+
+          {/* Custom date/time log toggle */}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowCustomLog(v => !v)}
+            disabled={!medName.trim()}
+            style={{ opacity: medName.trim() ? 1 : 0.6, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+          >
+            <Clock size={16} /> {showCustomLog ? 'Hide Custom Time' : 'Log with Custom Date & Time'}
+          </button>
+
+          {showCustomLog && (
+            <div style={{
+              background: 'var(--input-bg)',
+              border: '1.5px solid var(--primary)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Log Entry for: <em style={{ textTransform: 'none', fontStyle: 'normal', color: 'var(--text-main)' }}>{medName}</em>
+              </span>
+              <div className="input-group" style={{ margin: 0 }}>
+                <label htmlFor="custom-med-name">Medication Name</label>
+                <input
+                  id="custom-med-name"
+                  type="text"
+                  placeholder="e.g. Paracetamol"
+                  value={customMedName}
+                  onChange={e => setCustomMedName(e.target.value)}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div className="input-group" style={{ margin: 0, flex: 1 }}>
+                  <label htmlFor="custom-log-date">Date</label>
+                  <input
+                    id="custom-log-date"
+                    type="date"
+                    value={customDate}
+                    onChange={e => setCustomDate(e.target.value)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-main)',
+                      fontWeight: '500',
+                      outline: 'none',
+                      width: '100%'
+                    }}
+                  />
+                </div>
+                <div className="input-group" style={{ margin: 0, flex: 1 }}>
+                  <label htmlFor="custom-log-time">Time</label>
+                  <input
+                    id="custom-log-time"
+                    type="time"
+                    value={customTime}
+                    onChange={e => setCustomTime(e.target.value)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-main)',
+                      fontWeight: '500',
+                      outline: 'none',
+                      width: '100%'
+                    }}
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleAddCustomLog}
+                disabled={!customMedName.trim() || !customDate || !customTime}
+                style={{ opacity: (customMedName.trim() && customDate && customTime) ? 1 : 0.6 }}
+              >
+                <Calendar size={16} /> Save Custom Log
+              </button>
+            </div>
+          )}
           
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
