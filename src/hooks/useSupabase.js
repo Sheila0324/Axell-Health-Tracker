@@ -86,9 +86,16 @@ export function useSupabase(key, initialValue) {
     setValue(nextValue);
 
     if (isReady && nextValue !== undefined) {
-      supabase.from('app_state').upsert({ id: key, data: nextValue }).catch(err => {
-        console.error('Error updating Supabase:', err);
-      });
+      supabase.from('app_state')
+        .upsert({ id: key, data: nextValue })
+        .then(
+          ({ error }) => {
+            if (error) console.error('Error updating Supabase:', error);
+          },
+          (err) => {
+            console.error('Error updating Supabase (network/other error):', err);
+          }
+        );
     }
   };
 
