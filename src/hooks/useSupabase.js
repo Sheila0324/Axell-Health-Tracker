@@ -81,20 +81,15 @@ export function useSupabase(key, initialValue) {
   }, [key, isReady]);
 
   const setSupabaseValue = (newValueOrUpdater) => {
-    let nextValueToPush;
-    setValue(prev => {
-      const nextValue = typeof newValueOrUpdater === 'function' ? newValueOrUpdater(prev) : newValueOrUpdater;
-      nextValueToPush = nextValue;
-      return nextValue;
-    });
+    const nextValue = typeof newValueOrUpdater === 'function' ? newValueOrUpdater(latestValue.current) : newValueOrUpdater;
+    latestValue.current = nextValue;
+    setValue(nextValue);
 
-    setTimeout(() => {
-      if (isReady && nextValueToPush !== undefined) {
-        supabase.from('app_state').upsert({ id: key, data: nextValueToPush }).catch(err => {
-          console.error('Error updating Supabase:', err);
-        });
-      }
-    }, 0);
+    if (isReady && nextValue !== undefined) {
+      supabase.from('app_state').upsert({ id: key, data: nextValue }).catch(err => {
+        console.error('Error updating Supabase:', err);
+      });
+    }
   };
 
   return [value, setSupabaseValue, isReady];
