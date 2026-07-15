@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, differenceInSeconds } from 'date-fns';
 import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle, Stethoscope, Mic, MicOff, X } from 'lucide-react';
 
-export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [], insertLog }) {
+export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [], insertLog, intervals = {}, setIntervals }) {
   const [gelProgress, setGelProgress] = useState(100);
   const [gelTimeLeft, setGelTimeLeft] = useState('');
 
@@ -226,41 +226,63 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
     return () => clearInterval(timer);
   }, []);
 
-  const upcomingItems = useMemo(() => {
-    const rules = [
-      { id: 'ibuprofen', keywords: ['ibuprofen', 'motrin'], hours: 6, type: 'meds', name: 'Ibuprofen' },
-      { id: 'paracetamol', keywords: ['paracetamol', 'tylenol'], hours: 4, type: 'meds', name: 'Paracetamol' },
-      { id: 'vitals', isVitals: true, hours: 3, type: 'vitals', name: 'Vitals Check' }
-    ];
+  const [setupIntervals, setSetupIntervals] = useState({});
 
+  const { upcomingItems, missingIntervals } = useMemo(() => {
     const upcoming = [];
+    const missing = [];
     
-    rules.forEach(rule => {
-      let lastLog = null;
-      if (rule.isVitals) {
-        lastLog = healthLogs.find(l => l.category === 'vitals' && l.type === 'temp');
-      } else {
-        lastLog = healthLogs.find(l => 
-          l.category === 'medicine' && 
-          l.details && 
-          rule.keywords.some(k => l.details.toLowerCase().includes(k))
-        );
-      }
+    // Map to track the most recent log per unique item
+    const latestLogs = new Map();
 
-      if (lastLog) {
-        const lastTime = parseISO(lastLog.created_at);
-        const nextDue = new Date(lastTime.getTime() + rule.hours * 3600 * 1000);
+    healthLogs.forEach(log => {
+      if (log.category === 'vitals' && log.type === 'temp') {
+        if (!latestLogs.has('Vitals Check')) {
+          latestLogs.set('Vitals Check', { name: 'Vitals Check', type: 'vitals', time: parseISO(log.created_at) });
+        }
+      } else if (log.category === 'medicine' && log.type === 'dose' && log.details) {
+        const medName = log.details.trim();
+        if (!latestLogs.has(medName)) {
+          latestLogs.set(medName, { name: medName, type: 'meds', time: parseISO(log.created_at) });
+        }
+      }
+    });
+
+    latestLogs.forEach((itemData, itemName) => {
+      const intervalHours = intervals[itemName];
+      
+      if (intervalHours === undefined || intervalHours === null) {
+        missing.push({ id: itemName, ...itemData });
+      } else {
+        const nextDue = new Date(itemData.time.getTime() + intervalHours * 3600 * 1000);
         upcoming.push({
-          ...rule,
-          lastTime,
+          id: itemName,
+          name: itemName,
+          type: itemData.type,
+          lastTime: itemData.time,
           nextDue,
         });
       }
     });
 
-    return upcoming.sort((a, b) => a.nextDue - b.nextDue);
+    return { 
+      upcomingItems: upcoming.sort((a, b) => a.nextDue - b.nextDue),
+      missingIntervals: missing
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [healthLogs, scheduleUpdateTrigger]);
+  }, [healthLogs, scheduleUpdateTrigger, intervals]);
+
+  const handleSaveInterval = (itemName) => {
+    const hours = parseFloat(setupIntervals[itemName] || 4); // default 4 if empty
+    if (!isNaN(hours) && hours > 0 && setIntervals) {
+      setIntervals(prev => ({ ...prev, [itemName]: hours }));
+      setSetupIntervals(prev => {
+        const copy = { ...prev };
+        delete copy[itemName];
+        return copy;
+      });
+    }
+  };
 
   const handleMarkAsDone = async (item) => {
     if (!insertLog) return;
@@ -422,9 +444,41 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
           <CalendarClock size={20} className="text-primary" /> 
           Upcoming Schedule
         </h2>
-        {upcomingItems.length === 0 ? (
+
+        {missingIntervals.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', marginBottom: '16px' }}>
+            {missingIntervals.map(missing => (
+              <div key={missing.id} style={{ background: 'var(--input-bg)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', padding: '12px' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '8px' }}>
+                  <strong>Detected new item:</strong> {missing.name}<br/>
+                  How often should this be given?
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input 
+                    type="number" 
+                    className="input-field" 
+                    style={{ width: '80px', padding: '6px' }}
+                    placeholder="e.g. 6"
+                    value={setupIntervals[missing.id] || ''}
+                    onChange={e => setSetupIntervals(prev => ({ ...prev, [missing.id]: e.target.value }))}
+                  />
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>hours</span>
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', marginLeft: 'auto' }}
+                    onClick={() => handleSaveInterval(missing.id)}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {upcomingItems.length === 0 && missingIntervals.length === 0 ? (
           <p className="timestamp" style={{ textAlign: 'center', padding: '12px 0' }}>Log meds or vitals to see them here.</p>
-        ) : (
+        ) : upcomingItems.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
             {upcomingItems.map(item => {
               const now = new Date();

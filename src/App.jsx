@@ -25,6 +25,7 @@ function App() {
   
   const [gelTimer, setGelTimer, gelReady] = useSupabase('axell_gel_timer', null);
   const [rounds, setRounds, roundsReady] = useSupabase('axell_rounds', []);
+  const [intervals, setIntervals, intervalsReady] = useSupabase('axell_intervals', {});
 
   // Structured health_logs table — Realtime listeners fire fetchLogs() on any change
   const { logs: healthLogs, insertLog, isReady: logsReady } = useHealthLogs();
@@ -76,7 +77,7 @@ function App() {
   const renderView = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} insertLog={insertLog} />;
+        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
       case 'meds':
         return <MedicationsView medications={medications} setMedications={setMedications} insertLog={insertLog} />;
       case 'vitals':
@@ -84,7 +85,7 @@ function App() {
       case 'tracker':
         return <TrackerView gelTimer={gelTimer} setGelTimer={setGelTimer} rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
       default:
-        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} insertLog={insertLog} />;
+        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
     }
   };
 
