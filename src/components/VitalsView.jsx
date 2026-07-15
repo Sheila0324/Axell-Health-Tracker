@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Thermometer, Droplets, Baby, Trash2, Edit2, Plus } from 'lucide-react';
+import { Thermometer, Droplets, Baby, Trash2, Edit2, Plus, History, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,6 +7,7 @@ export default function VitalsView({ vitals, setVitals }) {
   const [temp, setTemp] = useState('');
   const [water, setWater] = useState('');
   const [promptData, setPromptData] = useState(null);
+  const [showAllTemps, setShowAllTemps] = useState(false);
 
   const logTemp = (e) => {
     if (e) e.preventDefault();
@@ -83,9 +84,19 @@ export default function VitalsView({ vitals, setVitals }) {
     <div>
       {/* Temperature Logger */}
       <div className="card">
-        <h2 className="card-title">
-          <Thermometer size={20} className="text-danger" /> 
-          Temperature Logs
+        <h2 className="card-title" style={{ justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Thermometer size={20} className="text-danger" />
+            Temperature Logs
+          </span>
+          {(vitals?.temperatures || []).length > 0 && (
+            <button
+              onClick={() => setShowAllTemps(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: '700', padding: '4px 0' }}
+            >
+              <History size={14} /> View All ({(vitals?.temperatures || []).length})
+            </button>
+          )}
         </h2>
         <form onSubmit={logTemp} className="input-group">
           <label htmlFor="temp-input">Body Temperature (°C)</label>
@@ -135,9 +146,12 @@ export default function VitalsView({ vitals, setVitals }) {
             );
           })}
           {(vitals?.temperatures || []).length > 5 && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '6px' }}>
-              Showing latest 5 records
-            </span>
+            <button
+              onClick={() => setShowAllTemps(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: '700', textAlign: 'center', marginTop: '6px', padding: '4px', width: '100%' }}
+            >
+              + {(vitals?.temperatures || []).length - 5} more — View all logs
+            </button>
           )}
         </div>
       </div>
@@ -264,6 +278,83 @@ export default function VitalsView({ vitals, setVitals }) {
           )}
         </div>
       </div>
+
+      {/* Temperature Full History Modal */}
+      {showAllTemps && (
+        <div className="modal-backdrop" onClick={() => setShowAllTemps(false)}>
+          <div
+            className="card modal-content"
+            style={{ margin: 0, maxWidth: '480px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', fontSize: '1rem', color: 'var(--text-main)' }}>
+                <Thermometer size={18} className="text-danger" />
+                All Temperature Logs
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '2px 8px', background: 'var(--input-bg)', borderRadius: '10px', color: 'var(--text-muted)' }}>
+                  {(vitals?.temperatures || []).length} records
+                </span>
+              </span>
+              <button onClick={() => setShowAllTemps(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Scrollable List */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {(vitals?.temperatures || []).length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px 0', fontSize: '0.9rem' }}>No temperature records yet.</p>
+              ) : (
+                (() => {
+                  // Group by date
+                  const groups = {};
+                  (vitals?.temperatures || []).forEach(t => {
+                    const dateKey = format(parseISO(t.time), 'MMM d, yyyy');
+                    if (!groups[dateKey]) groups[dateKey] = [];
+                    groups[dateKey].push(t);
+                  });
+                  return Object.entries(groups).map(([date, records]) => (
+                    <div key={date}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', margin: '10px 0 6px', paddingLeft: '4px' }}>
+                        {date}
+                      </div>
+                      {records.map(t => {
+                        const status = getTempStatus(t.value);
+                        return (
+                          <div key={t.id} className="list-item">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <strong style={{ fontSize: '1.05rem' }}>{t.value}°C</strong>
+                              <span className={`temp-badge ${status.class}`} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>
+                                {status.text}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                              <span className="timestamp">{format(parseISO(t.time), 'hh:mm a')}</span>
+                              <Edit2
+                                size={15}
+                                className="text-white"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => { setShowAllTemps(false); setPromptData({ type: 'edit_temp', id: t.id, text: 'Edit temperature (°C):', value: t.value }); }}
+                              />
+                              <Trash2
+                                size={15}
+                                className="text-white"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => { setShowAllTemps(false); setPromptData({ type: 'delete_temp', id: t.id, text: 'Delete this temperature record?' }); }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ));
+                })()
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Action Prompts */}
       {promptData && (
