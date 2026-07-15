@@ -3,7 +3,7 @@ import { Pill, Plus, Bell, Trash2, Edit2, Calendar, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function MedicationsView({ medications, setMedications }) {
+export default function MedicationsView({ medications, setMedications, insertLog }) {
   const [medName, setMedName] = useState('');
   const [alarmTime, setAlarmTime] = useState('');
   const [promptData, setPromptData] = useState(null);
@@ -24,6 +24,7 @@ export default function MedicationsView({ medications, setMedications }) {
       ...prev,
       history: [newMed, ...(prev?.history || [])]
     }));
+    insertLog({ category: 'medicine', type: 'dose', details: medName.trim() });
     setMedName('');
   };
 
@@ -38,6 +39,7 @@ export default function MedicationsView({ medications, setMedications }) {
       ...prev,
       history: [newMed, ...(prev?.history || [])].sort((a, b) => new Date(b.time) - new Date(a.time))
     }));
+    insertLog({ category: 'medicine', type: 'dose', details: customMedName.trim(), created_at: loggedAt.toISOString() });
     setCustomMedName('');
     setCustomDate(todayStr);
     setCustomTime(nowTimeStr);

@@ -3,7 +3,7 @@ import { Snowflake, Users, Play, Square, Trash2, Edit2, Clock } from 'lucide-rea
 import { format, differenceInSeconds, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }) {
+export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds, insertLog }) {
   const [duration, setDuration] = useState('4');
   const [timeLeft, setTimeLeft] = useState(null);
 
@@ -51,6 +51,7 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds }
   const logRound = (person) => {
     const newRound = { id: uuidv4(), person, note: roundNote.trim(), time: new Date().toISOString() };
     setRounds(prev => [newRound, ...(prev || [])]);
+    insertLog({ category: 'note', type: person, details: roundNote.trim() || null });
     setRoundNote('');
   };
 

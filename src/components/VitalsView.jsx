@@ -3,7 +3,7 @@ import { Thermometer, Droplets, Baby, Trash2, Edit2, Plus, History, X } from 'lu
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function VitalsView({ vitals, setVitals }) {
+export default function VitalsView({ vitals, setVitals, insertLog }) {
   const [temp, setTemp] = useState('');
   const [water, setWater] = useState('');
   const [promptData, setPromptData] = useState(null);
@@ -17,6 +17,7 @@ export default function VitalsView({ vitals, setVitals }) {
       ...prev, 
       temperatures: [newTemp, ...(prev?.temperatures || [])] 
     }));
+    insertLog({ category: 'vitals', type: 'temp', value: parseFloat(temp), unit: 'C' });
     setTemp('');
   };
 
@@ -28,6 +29,7 @@ export default function VitalsView({ vitals, setVitals }) {
       ...prev, 
       waterIntake: [newWater, ...(prev?.waterIntake || [])] 
     }));
+    insertLog({ category: 'water', type: 'water', value: parseInt(water), unit: 'ml' });
     setWater('');
   };
 
@@ -37,6 +39,7 @@ export default function VitalsView({ vitals, setVitals }) {
       ...prev, 
       waterIntake: [newWater, ...(prev?.waterIntake || [])] 
     }));
+    insertLog({ category: 'water', type: 'water', value: amount, unit: 'ml' });
   };
 
   const logDiaper = (type) => {
@@ -45,6 +48,8 @@ export default function VitalsView({ vitals, setVitals }) {
       ...prev, 
       diapers: [newDiaper, ...(prev?.diapers || [])] 
     }));
+    const diaperType = type === 'Urine' ? 'pee' : type === 'Poop' ? 'poop' : 'both';
+    insertLog({ category: 'diaper', type: diaperType, details: type });
   };
 
   const getTempStatus = (val) => {

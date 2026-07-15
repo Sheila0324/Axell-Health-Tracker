@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Pill, Activity, Clock } from 'lucide-react';
 import { useSupabase } from './hooks/useSupabase';
+import { useHealthLogs } from './hooks/useHealthLogs';
 import DashboardView from './components/DashboardView';
 import MedicationsView from './components/MedicationsView';
 import VitalsView from './components/VitalsView';
@@ -24,6 +25,9 @@ function App() {
   
   const [gelTimer, setGelTimer, gelReady] = useSupabase('axell_gel_timer', null);
   const [rounds, setRounds, roundsReady] = useSupabase('axell_rounds', []);
+
+  // Structured health_logs table — Realtime listeners fire fetchLogs() on any change
+  const { logs: healthLogs, insertLog, isReady: logsReady } = useHealthLogs();
 
   // Alarm Checker
   useEffect(() => {
@@ -56,7 +60,7 @@ function App() {
     return () => clearInterval(interval);
   }, [gelTimer, setMedications, setGelTimer]);
 
-  if (!vitalsReady || !medsReady || !gelReady || !roundsReady) {
+  if (!vitalsReady || !medsReady || !gelReady || !roundsReady || !logsReady) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', background: 'var(--background)' }}>
         <div className="progress-ring-container" style={{ margin: '0 0 20px 0' }}>
@@ -74,11 +78,11 @@ function App() {
       case 'dashboard':
         return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} />;
       case 'meds':
-        return <MedicationsView medications={medications} setMedications={setMedications} />;
+        return <MedicationsView medications={medications} setMedications={setMedications} insertLog={insertLog} />;
       case 'vitals':
-        return <VitalsView vitals={vitals} setVitals={setVitals} />;
+        return <VitalsView vitals={vitals} setVitals={setVitals} insertLog={insertLog} />;
       case 'tracker':
-        return <TrackerView gelTimer={gelTimer} setGelTimer={setGelTimer} rounds={rounds} setRounds={setRounds} />;
+        return <TrackerView gelTimer={gelTimer} setGelTimer={setGelTimer} rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
       default:
         return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} />;
     }
