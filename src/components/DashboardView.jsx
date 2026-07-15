@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, differenceInSeconds } from 'date-fns';
 import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby } from 'lucide-react';
 
-export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [] }) {
+export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [], insertLog }) {
   const [gelProgress, setGelProgress] = useState(100);
   const [gelTimeLeft, setGelTimeLeft] = useState('');
 
@@ -117,6 +117,20 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
   };
   // ----------------------------------------
 
+  // ---------- Quick Diaper Logger Logic ----------
+  const [diaperModalType, setDiaperModalType] = useState(null); // 'poop' or 'both'
+  const [toastMessage, setToastMessage] = useState('');
+
+  const handleQuickDiaperLog = async (type, details = null) => {
+    if (insertLog) {
+      await insertLog({ category: 'diaper', type, details });
+      setToastMessage(`✅ ${type === 'pee' ? 'Wet' : 'Dirty'} Diaper Logged!`);
+      setTimeout(() => setToastMessage(''), 2500);
+      setDiaperModalType(null);
+    }
+  };
+  // -----------------------------------------------
+
   return (
     <div>
 
@@ -199,6 +213,64 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
         <div className="timestamp" style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.75rem' }}>
           Tracking since {format(shiftSummary.startTime, 'h:mm a')}
         </div>
+      </div>
+
+      {/* Quick Diaper Logger */}
+      <div className="card" style={{ position: 'relative' }}>
+        <h2 className="card-title" style={{ marginBottom: '16px' }}>
+          <Baby size={20} className="text-warning" /> 
+          Quick Diaper Log
+        </h2>
+
+        {toastMessage && (
+          <div style={{
+            position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)',
+            background: 'var(--primary)', color: 'white', padding: '8px 16px',
+            borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)', zIndex: 10,
+            animation: 'fadeInOut 2.5s ease forwards'
+          }}>
+            {toastMessage}
+          </div>
+        )}
+
+        {diaperModalType ? (
+          <div style={{ background: 'var(--input-bg)', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border)' }}>
+            <span style={{ display: 'block', marginBottom: '12px', fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)', textAlign: 'center' }}>
+              Select Consistency for {diaperModalType === 'poop' ? 'Poop' : 'Both'}
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button className="btn btn-secondary" onClick={() => handleQuickDiaperLog(diaperModalType, 'Formed/Hard')}>Formed / Hard</button>
+              <button className="btn btn-secondary" onClick={() => handleQuickDiaperLog(diaperModalType, 'Loose')}>Loose</button>
+              <button className="btn btn-secondary" onClick={() => handleQuickDiaperLog(diaperModalType, 'Watery/Diarrhea')}>Watery / Diarrhea</button>
+              <button className="btn btn-secondary" onClick={() => setDiaperModalType(null)} style={{ marginTop: '8px', background: 'transparent', border: '1px solid var(--border)' }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => handleQuickDiaperLog('pee', 'Urine')}
+              style={{ flex: 1, borderLeft: '4px solid #facc15', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
+            >
+              💦 Pee
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => setDiaperModalType('poop')}
+              style={{ flex: 1, borderLeft: '4px solid #854d0e', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
+            >
+              💩 Poop
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => setDiaperModalType('both')}
+              style={{ flex: 1, borderLeft: '4px solid var(--primary)', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
+            >
+              👶 Both
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Grid: Vitals & Meds */}
