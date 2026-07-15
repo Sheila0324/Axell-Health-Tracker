@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, differenceInSeconds } from 'date-fns';
-import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby } from 'lucide-react';
+import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle } from 'lucide-react';
 
 export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [], insertLog }) {
   const [gelProgress, setGelProgress] = useState(100);
@@ -130,6 +130,61 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
     }
   };
   // -----------------------------------------------
+
+  // ---------- Upcoming Schedule Logic ----------
+  const [scheduleUpdateTrigger, setScheduleUpdateTrigger] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setScheduleUpdateTrigger(v => v + 1), 60000); // Update every minute to refresh colors/times
+    return () => clearInterval(timer);
+  }, []);
+
+  const upcomingItems = useMemo(() => {
+    const rules = [
+      { id: 'ibuprofen', keywords: ['ibuprofen', 'motrin'], hours: 6, type: 'meds', name: 'Ibuprofen' },
+      { id: 'paracetamol', keywords: ['paracetamol', 'tylenol'], hours: 4, type: 'meds', name: 'Paracetamol' },
+      { id: 'vitals', isVitals: true, hours: 3, type: 'vitals', name: 'Vitals Check' }
+    ];
+
+    const upcoming = [];
+    
+    rules.forEach(rule => {
+      let lastLog = null;
+      if (rule.isVitals) {
+        lastLog = healthLogs.find(l => l.category === 'vitals' && l.type === 'temp');
+      } else {
+        lastLog = healthLogs.find(l => 
+          l.category === 'medicine' && 
+          l.details && 
+          rule.keywords.some(k => l.details.toLowerCase().includes(k))
+        );
+      }
+
+      if (lastLog) {
+        const lastTime = parseISO(lastLog.created_at);
+        const nextDue = new Date(lastTime.getTime() + rule.hours * 3600 * 1000);
+        upcoming.push({
+          ...rule,
+          lastTime,
+          nextDue,
+        });
+      }
+    });
+
+    return upcoming.sort((a, b) => a.nextDue - b.nextDue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [healthLogs, scheduleUpdateTrigger]);
+
+  const handleMarkAsDone = async (item) => {
+    if (!insertLog) return;
+    if (item.type === 'vitals') {
+      const tempStr = window.prompt("Enter Temperature (°C):");
+      if (!tempStr || isNaN(tempStr)) return;
+      await insertLog({ category: 'vitals', type: 'temp', value: parseFloat(tempStr), unit: 'C' });
+    } else {
+      await insertLog({ category: 'medicine', type: 'dose', details: item.name });
+    }
+  };
+  // ---------------------------------------------
 
   return (
     <div>
@@ -269,6 +324,76 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
             >
               👶 Both
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* Upcoming Schedule Timeline */}
+      <div className="card">
+        <h2 className="card-title">
+          <CalendarClock size={20} className="text-primary" /> 
+          Upcoming Schedule
+        </h2>
+        {upcomingItems.length === 0 ? (
+          <p className="timestamp" style={{ textAlign: 'center', padding: '12px 0' }}>Log meds or vitals to see them here.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+            {upcomingItems.map(item => {
+              const now = new Date();
+              const diffMs = item.nextDue - now;
+              const diffMins = Math.floor(diffMs / 60000);
+              const isPastDue = diffMins < 0;
+              const isDueSoon = !isPastDue && diffMins <= 60;
+              
+              let statusColor = 'var(--text-muted)';
+              let statusBorder = 'var(--border)';
+              if (isPastDue) {
+                statusColor = 'var(--danger)';
+                statusBorder = 'var(--danger)';
+              } else if (isDueSoon) {
+                statusColor = 'var(--warning)';
+                statusBorder = 'var(--warning)';
+              }
+
+              let timeText = '';
+              if (isPastDue) {
+                timeText = `Past due by ${Math.abs(diffMins)} mins`;
+              } else if (diffMins < 60) {
+                timeText = `Due in ${diffMins} mins`;
+              } else {
+                const hrs = Math.floor(diffMins / 60);
+                const mins = diffMins % 60;
+                timeText = `Due in ${hrs}h ${mins}m`;
+              }
+
+              return (
+                <div key={item.id} style={{ 
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  background: 'var(--input-bg)', borderLeft: `4px solid ${statusBorder}`, 
+                  borderRadius: 'var(--radius-sm)', padding: '12px 16px' 
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>{item.name}</strong>
+                    <div style={{ fontSize: '0.85rem', color: statusColor, fontWeight: '700' }}>
+                      {timeText} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>(at {format(item.nextDue, 'h:mm a')})</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleMarkAsDone(item)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: 'transparent', border: '1px solid var(--border)',
+                      color: 'var(--text-main)', padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-main)'; }}
+                  >
+                    <CheckCircle size={16} /> Done
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
