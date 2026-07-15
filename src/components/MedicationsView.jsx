@@ -125,9 +125,13 @@ export default function MedicationsView({ medications, setMedications }) {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => setShowCustomLog(v => !v)}
-            disabled={!medName.trim()}
-            style={{ opacity: medName.trim() ? 1 : 0.6, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+            onClick={() => {
+              setShowCustomLog(v => !v);
+              if (!showCustomLog && medName.trim() && !customMedName.trim()) {
+                setCustomMedName(medName.trim());
+              }
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
           >
             <Clock size={16} /> {showCustomLog ? 'Hide Custom Time' : 'Log with Custom Date & Time'}
           </button>
