@@ -30,20 +30,20 @@ function App() {
     const interval = setInterval(() => {
       const now = new Date();
       
-      // Check Medication Alarms
-      let medsChanged = false;
-      const updatedAlarms = (medications?.alarms || []).map(alarm => {
-        if (!alarm.notified && new Date(alarm.time) <= now) {
-          sendNotification("Medication Due!", `It's time for ${alarm.name}`);
-          medsChanged = true;
-          return { ...alarm, notified: true };
-        }
-        return alarm;
+      // Check Medication Alarms — use functional updater to avoid stale closure
+      setMedications(prev => {
+        if (!prev?.alarms) return prev;
+        let changed = false;
+        const updatedAlarms = prev.alarms.map(alarm => {
+          if (!alarm.notified && new Date(alarm.time) <= now) {
+            sendNotification("Medication Due!", `It's time for ${alarm.name}`);
+            changed = true;
+            return { ...alarm, notified: true };
+          }
+          return alarm;
+        });
+        return changed ? { ...prev, alarms: updatedAlarms } : prev;
       });
-      
-      if (medsChanged) {
-        setMedications(prev => ({ ...prev, alarms: updatedAlarms }));
-      }
       
       // Check Gel Timer
       if (gelTimer && !gelTimer.notified && new Date(gelTimer.expiresAt) <= now) {
@@ -54,7 +54,7 @@ function App() {
     }, 5000); // Check every 5 seconds for snappier notifications
     
     return () => clearInterval(interval);
-  }, [medications?.alarms, gelTimer, setMedications, setGelTimer]);
+  }, [gelTimer, setMedications, setGelTimer]);
 
   if (!vitalsReady || !medsReady || !gelReady || !roundsReady) {
     return (
