@@ -76,7 +76,7 @@ function App() {
   const renderView = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} />;
+        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} />;
       case 'meds':
         return <MedicationsView medications={medications} setMedications={setMedications} insertLog={insertLog} />;
       case 'vitals':
@@ -84,7 +84,7 @@ function App() {
       case 'tracker':
         return <TrackerView gelTimer={gelTimer} setGelTimer={setGelTimer} rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
       default:
-        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} />;
+        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} />;
     }
   };
 
