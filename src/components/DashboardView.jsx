@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, differenceInSeconds } from 'date-fns';
-import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle } from 'lucide-react';
+import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle, Stethoscope, Mic, MicOff, X } from 'lucide-react';
 
 export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [], insertLog }) {
   const [gelProgress, setGelProgress] = useState(100);
@@ -130,6 +130,94 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
     }
   };
   // -----------------------------------------------
+
+  // ---------- Staff Visit Logger State ----------
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [visitorType, setVisitorType] = useState('Doctor');
+  const [staffChecklist, setStaffChecklist] = useState([]);
+  const [staffNotes, setStaffNotes] = useState('');
+  const [isDictating, setIsDictating] = useState(false);
+  
+  const toggleChecklistItem = (item) => {
+    if (staffChecklist.includes(item)) {
+      setStaffChecklist(staffChecklist.filter(i => i !== item));
+    } else {
+      setStaffChecklist([...staffChecklist, item]);
+    }
+  };
+
+  const stopDictating = () => {
+    if (window.currentRecognition) {
+      window.currentRecognition.stop();
+      window.currentRecognition = null;
+    }
+    setIsDictating(false);
+  };
+
+  const handleDictate = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser doesn't support the native Web Speech API.");
+      return;
+    }
+
+    if (isDictating) {
+      stopDictating();
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    
+    recognition.onstart = () => setIsDictating(true);
+    
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        setStaffNotes(prev => (prev + ' ' + finalTranscript).trim());
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsDictating(false);
+    };
+
+    recognition.onend = () => {
+      setIsDictating(false);
+    };
+
+    recognition.start();
+    window.currentRecognition = recognition;
+  };
+
+  const handleSaveStaffLog = async () => {
+    if (!insertLog) return;
+    const checklistStr = staffChecklist.length > 0 ? `[${staffChecklist.join(', ')}]` : '';
+    const details = `${checklistStr} ${staffNotes}`.trim();
+    
+    await insertLog({
+      category: 'note',
+      type: visitorType,
+      details: details || 'Routine Visit'
+    });
+    
+    setToastMessage(`✅ ${visitorType} Visit Logged!`);
+    setTimeout(() => setToastMessage(''), 2500);
+    
+    setShowStaffModal(false);
+    setVisitorType('Doctor');
+    setStaffChecklist([]);
+    setStaffNotes('');
+    stopDictating();
+  };
+  // ----------------------------------------------
 
   // ---------- Upcoming Schedule Logic ----------
   const [scheduleUpdateTrigger, setScheduleUpdateTrigger] = useState(0);
@@ -517,6 +605,118 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
           </div>
         )}
       </div>
+
+      {/* Staff Visit FAB */}
+      <button 
+        onClick={() => setShowStaffModal(true)}
+        style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          width: '64px', height: '64px', borderRadius: '32px',
+          background: 'linear-gradient(135deg, var(--primary), #3b82f6)',
+          color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center',
+          boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)',
+          border: 'none', cursor: 'pointer', zIndex: 50, transition: 'transform 0.2s ease'
+        }}
+        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        <Stethoscope size={32} />
+      </button>
+
+      {/* Staff Visit Modal */}
+      {showStaffModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: '16px'
+        }}>
+          <div style={{
+            background: 'var(--card-bg)', width: '100%', maxWidth: '400px',
+            borderRadius: 'var(--radius-lg)', padding: '24px', position: 'relative',
+            maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border)'
+          }}>
+            <button 
+              onClick={() => { setShowStaffModal(false); stopDictating(); }}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            >
+              <X size={24} />
+            </button>
+            
+            <h2 className="card-title" style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Stethoscope size={24} className="text-primary" /> Log Staff Visit
+            </h2>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Who Visited?</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['Doctor', 'Specialist', 'Nurse', 'Other'].map(type => (
+                  <button 
+                    key={type}
+                    onClick={() => setVisitorType(type)}
+                    className={`btn ${visitorType === type ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: '1 0 40%' }}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Quick Checklist</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['Checked Lungs', 'Checked Vitals', 'IV Check', 'Blood Draw', 'Meds Given'].map(item => (
+                  <button 
+                    key={item}
+                    onClick={() => toggleChecklistItem(item)}
+                    style={{ 
+                      background: staffChecklist.includes(item) ? 'var(--primary)' : 'var(--input-bg)',
+                      color: staffChecklist.includes(item) ? 'white' : 'var(--text-main)',
+                      border: `1px solid ${staffChecklist.includes(item) ? 'var(--primary)' : 'var(--border)'}`,
+                      padding: '6px 12px', borderRadius: '16px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>What did they say?</label>
+                {(window.SpeechRecognition || window.webkitSpeechRecognition) && (
+                  <button 
+                    onClick={handleDictate}
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: '4px', background: isDictating ? '#fee2e2' : 'var(--input-bg)',
+                      color: isDictating ? 'var(--danger)' : 'var(--text-main)', border: `1px solid ${isDictating ? 'var(--danger)' : 'var(--border)'}`,
+                      padding: '4px 10px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer'
+                    }}
+                  >
+                    {isDictating ? <><MicOff size={14} /> Stop</> : <><Mic size={14} /> Dictate</>}
+                  </button>
+                )}
+              </div>
+              <textarea 
+                className="input-field"
+                value={staffNotes}
+                onChange={e => setStaffNotes(e.target.value)}
+                placeholder="Doctor said lungs sound clear..."
+                rows={4}
+                style={{ resize: 'vertical' }}
+              />
+              {isDictating && <div style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span className="alarm-pulse" style={{ width: '6px', height: '6px' }} /> Listening...
+              </div>}
+            </div>
+
+            <button className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem' }} onClick={handleSaveStaffLog}>
+              Save Visit Log
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
