@@ -3,7 +3,7 @@ import { Thermometer, Droplets, Baby, Trash2, Edit2, Plus, History, X, CheckCirc
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function VitalsView({ vitals, setVitals, insertLog, deleteLog, healthLogs = [] }) {
+export default function VitalsView({ vitals, setVitals, insertLog, deleteLog, updateLog, healthLogs = [] }) {
   const [temp, setTemp] = useState('');
   const [water, setWater] = useState('');
   const [promptData, setPromptData] = useState(null);
@@ -97,24 +97,48 @@ export default function VitalsView({ vitals, setVitals, insertLog, deleteLog, he
       if (deleteLog && promptData.time) deleteLog('vitals', promptData.time);
     } else if (promptData.type === 'edit_temp') {
       if (promptData.value && !isNaN(promptData.value)) {
+        const val = parseFloat(promptData.value).toFixed(1);
         setVitals(prev => ({
           ...prev,
-          temperatures: (prev?.temperatures || []).map(t => t.id === promptData.id ? { ...t, value: parseFloat(promptData.value).toFixed(1) } : t)
+          temperatures: (prev?.temperatures || []).map(t => t.id === promptData.id ? { ...t, value: val } : t)
         }));
+        if (updateLog && promptData.time) {
+          updateLog('vitals', promptData.time, { value: parseFloat(val) });
+        }
       }
     } else if (promptData.type === 'delete_water') {
       setVitals(prev => ({ ...prev, waterIntake: (prev?.waterIntake || []).filter(w => w.id !== promptData.id) }));
       if (deleteLog && promptData.time) deleteLog('water', promptData.time);
     } else if (promptData.type === 'edit_water') {
       if (promptData.value && !isNaN(promptData.value)) {
+        const val = parseInt(promptData.value).toString();
         setVitals(prev => ({
           ...prev,
-          waterIntake: (prev?.waterIntake || []).map(w => w.id === promptData.id ? { ...w, value: parseInt(promptData.value).toString() } : w)
+          waterIntake: (prev?.waterIntake || []).map(w => w.id === promptData.id ? { ...w, value: val } : w)
         }));
+        if (updateLog && promptData.time) {
+          updateLog('water', promptData.time, { value: parseInt(val) });
+        }
       }
     } else if (promptData.type === 'delete_diaper') {
       setVitals(prev => ({ ...prev, diapers: (prev?.diapers || []).filter(d => d.id !== promptData.id) }));
       if (deleteLog && promptData.time) deleteLog('diaper', promptData.time);
+    } else if (promptData.type === 'edit_diaper') {
+      if (promptData.value) {
+        const formatted = promptData.value.trim();
+        const capitalized = formatted.charAt(0).toUpperCase() + formatted.slice(1).toLowerCase();
+        const valid = ['Urine', 'Poop', 'Both'];
+        if (valid.includes(capitalized)) {
+          setVitals(prev => ({
+            ...prev,
+            diapers: (prev?.diapers || []).map(d => d.id === promptData.id ? { ...d, type: capitalized } : d)
+          }));
+          const diaperType = capitalized === 'Urine' ? 'pee' : capitalized === 'Poop' ? 'poop' : 'both';
+          if (updateLog && promptData.time) {
+            updateLog('diaper', promptData.time, { type: diaperType, details: capitalized });
+          }
+        }
+      }
     }
     }
     setPromptData(null);
@@ -316,6 +340,12 @@ export default function VitalsView({ vitals, setVitals, insertLog, deleteLog, he
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <span className="timestamp">{format(parseISO(d.time), 'MMM d, hh:mm a')}</span>
+                  <Edit2 
+                    size={15} 
+                    className="text-white" 
+                    style={{ cursor: 'pointer' }} 
+                    onClick={() => setPromptData({ type: 'edit_diaper', id: d.id, time: d.time, text: 'Edit diaper type (Urine, Poop, or Both):', value: d.type })} 
+                  />
                   <Trash2 
                     size={15} 
                     className="text-white" 

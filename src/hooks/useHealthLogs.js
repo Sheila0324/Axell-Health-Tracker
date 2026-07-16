@@ -131,5 +131,17 @@ export function useHealthLogs() {
     }
   }, []);
 
-  return { logs, insertLog, deleteLog, isReady };
+  const updateLog = useCallback(async (category, createdAt, updates) => {
+    const { error } = await supabase
+      .from('health_logs')
+      .update(updates)
+      .eq('category', category)
+      .eq('created_at', createdAt);
+
+    if (error) {
+      console.error('[useHealthLogs] updateLog error:', error);
+    }
+  }, []);
+
+  return { logs, insertLog, deleteLog, updateLog, isReady };
 }

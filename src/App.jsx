@@ -27,7 +27,7 @@ function App() {
   const [intervals, setIntervals, intervalsReady] = useSupabase('axell_intervals', {});
 
   // Structured health_logs table — Realtime listeners fire fetchLogs() on any change
-  const { logs: healthLogs, insertLog, deleteLog, isReady: logsReady } = useHealthLogs();
+  const { logs: healthLogs, insertLog, deleteLog, updateLog, isReady: logsReady } = useHealthLogs();
 
   // Alarm Checker
   useEffect(() => {
@@ -74,7 +74,7 @@ function App() {
       case 'meds':
         return <MedicationsView medications={medications} setMedications={setMedications} insertLog={insertLog} />;
       case 'vitals':
-        return <VitalsView vitals={vitals} setVitals={setVitals} insertLog={insertLog} deleteLog={deleteLog} healthLogs={healthLogs} />;
+        return <VitalsView vitals={vitals} setVitals={setVitals} insertLog={insertLog} deleteLog={deleteLog} updateLog={updateLog} healthLogs={healthLogs} />;
       case 'tracker':
         return <TrackerView rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
       default:
