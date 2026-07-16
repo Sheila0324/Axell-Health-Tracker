@@ -115,11 +115,12 @@ export default function DashboardView({ vitals, setVitals, medications, healthLo
 
   const handleQuickDiaperLog = async (type, details = null) => {
     if (insertLog) {
-      await insertLog({ category: 'diaper', type, details });
+      const time = new Date().toISOString();
+      await insertLog({ category: 'diaper', type, details, created_at: time });
       
       if (setVitals) {
         const uiType = type === 'pee' ? 'Urine' : type === 'poop' ? 'Poop' : 'Both';
-        const newDiaper = { id: uuidv4(), type: uiType, time: new Date().toISOString() };
+        const newDiaper = { id: uuidv4(), type: uiType, time };
         setVitals(prev => ({
           ...prev,
           diapers: [newDiaper, ...(prev?.diapers || [])]

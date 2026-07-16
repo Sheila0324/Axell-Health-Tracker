@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 async function test() {
-  const { data, error } = await supabase.from('app_state').select('*');
+  const { data, error } = await supabase.from('health_logs').select('*').order('created_at', { ascending: false }).limit(10);
   console.log('Error:', error);
   console.log('Data:', JSON.stringify(data, null, 2));
 

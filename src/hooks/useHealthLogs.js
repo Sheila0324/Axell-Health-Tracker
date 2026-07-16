@@ -119,5 +119,17 @@ export function useHealthLogs() {
     // Realtime will trigger fetchLogs() automatically — no manual refetch needed
   }, []);
 
-  return { logs, insertLog, isReady };
+  const deleteLog = useCallback(async (category, createdAt) => {
+    const { error } = await supabase
+      .from('health_logs')
+      .delete()
+      .eq('category', category)
+      .eq('created_at', createdAt);
+
+    if (error) {
+      console.error('[useHealthLogs] deleteLog error:', error);
+    }
+  }, []);
+
+  return { logs, insertLog, deleteLog, isReady };
 }

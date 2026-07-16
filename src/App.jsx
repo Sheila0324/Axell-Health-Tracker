@@ -27,7 +27,7 @@ function App() {
   const [intervals, setIntervals, intervalsReady] = useSupabase('axell_intervals', {});
 
   // Structured health_logs table — Realtime listeners fire fetchLogs() on any change
-  const { logs: healthLogs, insertLog, isReady: logsReady } = useHealthLogs();
+  const { logs: healthLogs, insertLog, deleteLog, isReady: logsReady } = useHealthLogs();
 
   // Alarm Checker
   useEffect(() => {
@@ -70,15 +70,15 @@ function App() {
   const renderView = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView vitals={vitals} setVitals={setVitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
+        return <DashboardView vitals={vitals} setVitals={setVitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} deleteLog={deleteLog} intervals={intervals} setIntervals={setIntervals} />;
       case 'meds':
         return <MedicationsView medications={medications} setMedications={setMedications} insertLog={insertLog} />;
       case 'vitals':
-        return <VitalsView vitals={vitals} setVitals={setVitals} insertLog={insertLog} healthLogs={healthLogs} />;
+        return <VitalsView vitals={vitals} setVitals={setVitals} insertLog={insertLog} deleteLog={deleteLog} healthLogs={healthLogs} />;
       case 'tracker':
         return <TrackerView rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
       default:
-        return <DashboardView vitals={vitals} setVitals={setVitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
+        return <DashboardView vitals={vitals} setVitals={setVitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} deleteLog={deleteLog} intervals={intervals} setIntervals={setIntervals} />;
     }
   };
 

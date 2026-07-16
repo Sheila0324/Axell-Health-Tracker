@@ -3,7 +3,7 @@ import { Thermometer, Droplets, Baby, Trash2, Edit2, Plus, History, X, CheckCirc
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = [] }) {
+export default function VitalsView({ vitals, setVitals, insertLog, deleteLog, healthLogs = [] }) {
   const [temp, setTemp] = useState('');
   const [water, setWater] = useState('');
   const [promptData, setPromptData] = useState(null);
@@ -39,44 +39,48 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
   const logTemp = (e) => {
     if (e) e.preventDefault();
     if (!temp || isNaN(temp)) return;
-    const newTemp = { id: uuidv4(), value: parseFloat(temp).toFixed(1), time: new Date().toISOString() };
+    const time = new Date().toISOString();
+    const newTemp = { id: uuidv4(), value: parseFloat(temp).toFixed(1), time };
     setVitals(prev => ({ 
       ...prev, 
       temperatures: [newTemp, ...(prev?.temperatures || [])] 
     }));
-    insertLog({ category: 'vitals', type: 'temp', value: parseFloat(temp), unit: 'C' });
+    insertLog({ category: 'vitals', type: 'temp', value: parseFloat(temp), unit: 'C', created_at: time });
     setTemp('');
   };
 
   const logWater = (e) => {
     if (e) e.preventDefault();
     if (!water || isNaN(water)) return;
-    const newWater = { id: uuidv4(), value: parseInt(water).toString(), time: new Date().toISOString() };
+    const time = new Date().toISOString();
+    const newWater = { id: uuidv4(), value: parseInt(water).toString(), time };
     setVitals(prev => ({ 
       ...prev, 
       waterIntake: [newWater, ...(prev?.waterIntake || [])] 
     }));
-    insertLog({ category: 'water', type: 'water', value: parseInt(water), unit: 'ml' });
+    insertLog({ category: 'water', type: 'water', value: parseInt(water), unit: 'ml', created_at: time });
     setWater('');
   };
 
   const quickLogWater = (amount) => {
-    const newWater = { id: uuidv4(), value: amount.toString(), time: new Date().toISOString() };
+    const time = new Date().toISOString();
+    const newWater = { id: uuidv4(), value: amount.toString(), time };
     setVitals(prev => ({ 
       ...prev, 
       waterIntake: [newWater, ...(prev?.waterIntake || [])] 
     }));
-    insertLog({ category: 'water', type: 'water', value: amount, unit: 'ml' });
+    insertLog({ category: 'water', type: 'water', value: amount, unit: 'ml', created_at: time });
   };
 
   const logDiaper = (type) => {
-    const newDiaper = { id: uuidv4(), type, time: new Date().toISOString() };
+    const time = new Date().toISOString();
+    const newDiaper = { id: uuidv4(), type, time };
     setVitals(prev => ({ 
       ...prev, 
       diapers: [newDiaper, ...(prev?.diapers || [])] 
     }));
     const diaperType = type === 'Urine' ? 'pee' : type === 'Poop' ? 'poop' : 'both';
-    insertLog({ category: 'diaper', type: diaperType, details: type });
+    insertLog({ category: 'diaper', type: diaperType, details: type, created_at: time });
   };
 
   const getTempStatus = (val) => {
@@ -90,6 +94,7 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
   const confirmAction = () => {
     if (promptData.type === 'delete_temp') {
       setVitals(prev => ({ ...prev, temperatures: (prev?.temperatures || []).filter(t => t.id !== promptData.id) }));
+      if (deleteLog && promptData.time) deleteLog('vitals', promptData.time);
     } else if (promptData.type === 'edit_temp') {
       if (promptData.value && !isNaN(promptData.value)) {
         setVitals(prev => ({
@@ -99,6 +104,7 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
       }
     } else if (promptData.type === 'delete_water') {
       setVitals(prev => ({ ...prev, waterIntake: (prev?.waterIntake || []).filter(w => w.id !== promptData.id) }));
+      if (deleteLog && promptData.time) deleteLog('water', promptData.time);
     } else if (promptData.type === 'edit_water') {
       if (promptData.value && !isNaN(promptData.value)) {
         setVitals(prev => ({
@@ -108,6 +114,8 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
       }
     } else if (promptData.type === 'delete_diaper') {
       setVitals(prev => ({ ...prev, diapers: (prev?.diapers || []).filter(d => d.id !== promptData.id) }));
+      if (deleteLog && promptData.time) deleteLog('diaper', promptData.time);
+    }
     }
     setPromptData(null);
   };
@@ -171,7 +179,7 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
                     size={15} 
                     className="text-white" 
                     style={{ cursor: 'pointer' }} 
-                    onClick={() => setPromptData({ type: 'delete_temp', id: t.id, text: 'Delete this temperature record?' })} 
+                    onClick={() => setPromptData({ type: 'delete_temp', id: t.id, time: t.time, text: 'Delete this temperature record?' })} 
                   />
                 </div>
               </div>
@@ -242,12 +250,12 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
                   style={{ cursor: 'pointer' }} 
                   onClick={() => setPromptData({ type: 'edit_water', id: w.id, text: 'Edit water intake (ml):', value: w.value })} 
                 />
-                <Trash2 
-                  size={15} 
-                  className="text-white" 
-                  style={{ cursor: 'pointer' }} 
-                  onClick={() => setPromptData({ type: 'delete_water', id: w.id, text: 'Delete this water intake record?' })} 
-                />
+                 <Trash2 
+                    size={15} 
+                    className="text-white" 
+                    style={{ cursor: 'pointer' }} 
+                    onClick={() => setPromptData({ type: 'delete_water', id: w.id, time: w.time, text: 'Delete this water intake record?' })} 
+                  />
               </div>
             </div>
           ))}
@@ -312,7 +320,7 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
                     size={15} 
                     className="text-white" 
                     style={{ cursor: 'pointer' }} 
-                    onClick={() => setPromptData({ type: 'delete_diaper', id: d.id, text: `Delete this ${d.type} diaper log?` })} 
+                    onClick={() => setPromptData({ type: 'delete_diaper', id: d.id, time: d.time, text: `Delete this ${d.type} diaper log?` })} 
                   />
                 </div>
               </div>
