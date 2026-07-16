@@ -110,7 +110,6 @@ export default function DashboardView({ vitals, setVitals, medications, healthLo
   // ----------------------------------------
 
   // ---------- Quick Diaper Logger Logic ----------
-  const [diaperModalType, setDiaperModalType] = useState(null); // 'poop' or 'both'
   const [toastMessage, setToastMessage] = useState('');
 
   const handleQuickDiaperLog = async (type, details = null) => {
@@ -127,9 +126,8 @@ export default function DashboardView({ vitals, setVitals, medications, healthLo
         }));
       }
 
-      setToastMessage(`✅ ${type === 'pee' ? 'Wet' : 'Dirty'} Diaper Logged!`);
+      setToastMessage(`✅ ${type === 'pee' ? 'Wet' : type === 'poop' ? 'Dirty' : 'Wet & Dirty'} Diaper Logged!`);
       setTimeout(() => setToastMessage(''), 2500);
-      setDiaperModalType(null);
     }
   };
   // -----------------------------------------------
@@ -589,43 +587,29 @@ export default function DashboardView({ vitals, setVitals, medications, healthLo
           </div>
         )}
 
-        {diaperModalType ? (
-          <div style={{ background: 'var(--input-bg)', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border)' }}>
-            <span style={{ display: 'block', marginBottom: '12px', fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)', textAlign: 'center' }}>
-              Select Consistency for {diaperModalType === 'poop' ? 'Poop' : 'Both'}
-            </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button className="btn btn-secondary" onClick={() => handleQuickDiaperLog(diaperModalType, 'Formed/Hard')}>Formed / Hard</button>
-              <button className="btn btn-secondary" onClick={() => handleQuickDiaperLog(diaperModalType, 'Loose')}>Loose</button>
-              <button className="btn btn-secondary" onClick={() => handleQuickDiaperLog(diaperModalType, 'Watery/Diarrhea')}>Watery / Diarrhea</button>
-              <button className="btn btn-secondary" onClick={() => setDiaperModalType(null)} style={{ marginTop: '8px', background: 'transparent', border: '1px solid var(--border)' }}>Cancel</button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => handleQuickDiaperLog('pee', 'Urine')}
-              style={{ flex: 1, borderLeft: '4px solid #facc15', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
-            >
-              💦 Pee
-            </button>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => setDiaperModalType('poop')}
-              style={{ flex: 1, borderLeft: '4px solid #854d0e', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
-            >
-              💩 Poop
-            </button>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => setDiaperModalType('both')}
-              style={{ flex: 1, borderLeft: '4px solid var(--primary)', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
-            >
-              👶 Both
-            </button>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => handleQuickDiaperLog('pee', 'Urine')}
+            style={{ flex: 1, borderLeft: '4px solid #facc15', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
+          >
+            💦 Pee
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => handleQuickDiaperLog('poop', 'Poop')}
+            style={{ flex: 1, borderLeft: '4px solid #854d0e', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
+          >
+            💩 Poop
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => handleQuickDiaperLog('both', 'Both')}
+            style={{ flex: 1, borderLeft: '4px solid var(--primary)', padding: '14px 8px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '6px' }}
+          >
+            👶 Both
+          </button>
+        </div>
       </div>
 
       {/* Grid: Vitals & Meds */}
