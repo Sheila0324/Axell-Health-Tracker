@@ -112,6 +112,7 @@ export default function DashboardView({ vitals, setVitals, medications, healthLo
   // ---------- Quick Diaper Logger Logic ----------
   const [toastMessage, setToastMessage] = useState('');
 
+  // Logs diaper changes directly to database and updates local state
   const handleQuickDiaperLog = async (type, details = null) => {
     if (insertLog) {
       const time = new Date().toISOString();
