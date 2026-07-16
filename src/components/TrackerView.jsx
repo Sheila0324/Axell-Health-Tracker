@@ -1,52 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Snowflake, Users, Play, Square, Trash2, Edit2, Clock } from 'lucide-react';
-import { format, differenceInSeconds, parseISO } from 'date-fns';
+import React, { useState } from 'react';
+import { Users, Trash2, Edit2 } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds, insertLog }) {
-  const [duration, setDuration] = useState('4');
-  const [timeLeft, setTimeLeft] = useState(null);
-
+export default function TrackerView({ rounds, setRounds, insertLog }) {
   const [roundNote, setRoundNote] = useState('');
   const [promptData, setPromptData] = useState(null);
-
-  useEffect(() => {
-    let interval;
-    if (gelTimer) {
-      const updateCountdown = () => {
-        const diff = differenceInSeconds(parseISO(gelTimer.expiresAt), new Date());
-        if (diff <= 0) {
-          setTimeLeft('Expired!');
-        } else {
-          const h = Math.floor(diff / 3600);
-          const m = Math.floor((diff % 3600) / 60);
-          const s = diff % 60;
-          setTimeLeft(`${h}h ${m}m ${s}s`);
-        }
-      };
-      
-      updateCountdown();
-      interval = setInterval(updateCountdown, 1000);
-    } else {
-      setTimeLeft(null);
-    }
-    return () => clearInterval(interval);
-  }, [gelTimer]);
-
-  const startGel = () => {
-    const now = new Date();
-    const expires = new Date(now.getTime() + parseInt(duration) * 3600 * 1000);
-    setGelTimer({
-      id: uuidv4(),
-      appliedAt: now.toISOString(),
-      expiresAt: expires.toISOString(),
-      notified: false
-    });
-  };
-
-  const stopGel = () => {
-    setGelTimer(null);
-  };
 
   const logRound = (person) => {
     const newRound = { id: uuidv4(), person, note: roundNote.trim(), time: new Date().toISOString() };
@@ -68,53 +27,6 @@ export default function TrackerView({ gelTimer, setGelTimer, rounds, setRounds, 
 
   return (
     <div>
-      {/* Cooling Gel Section */}
-      <div className="card">
-        <h2 className="card-title">
-          <Snowflake size={20} className="text-info" /> 
-          Cooling Fever Gel Timer
-        </h2>
-        {!gelTimer ? (
-          <div className="input-group">
-            <label htmlFor="gel-duration-select">Set Duration</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <select 
-                id="gel-duration-select"
-                value={duration} 
-                onChange={e => setDuration(e.target.value)} 
-                style={{ flex: 1 }}
-              >
-                <option value="2">2 Hours</option>
-                <option value="4">4 Hours</option>
-                <option value="6">6 Hours</option>
-                <option value="8">8 Hours</option>
-              </select>
-              <button className="btn btn-primary" onClick={startGel} style={{ width: 'auto', padding: '0 24px' }}>
-                <Play size={16} /> Start
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-            <div className="timer-display" style={{ margin: '10px 0', fontSize: '2.5rem', color: 'var(--info)' }}>
-              {timeLeft}
-            </div>
-            <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
-              <span className="timestamp">
-                Applied: <strong>{format(parseISO(gelTimer.appliedAt), 'hh:mm a')}</strong>
-              </span>
-              <span className="timestamp">
-                Expires: <strong>{format(parseISO(gelTimer.expiresAt), 'hh:mm a')}</strong>
-              </span>
-            </div>
-            <button className="btn btn-danger" onClick={stopGel}>
-              <Square size={16} /> Stop Timer
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Doctor / Nurse Rounds Section */}
       <div className="card">
         <h2 className="card-title">
           <Users size={20} className="text-primary" /> 

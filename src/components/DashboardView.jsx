@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { format, parseISO, differenceInSeconds, differenceInMinutes } from 'date-fns';
+import { format, parseISO, differenceInMinutes } from 'date-fns';
 import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle, Stethoscope, Mic, MicOff, X, TrendingUp, Flame, Timer } from 'lucide-react';
 
-export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [], insertLog, intervals = {}, setIntervals }) {
-  const [gelProgress, setGelProgress] = useState(100);
-  const [gelTimeLeft, setGelTimeLeft] = useState('');
+export default function DashboardView({ vitals, medications, healthLogs = [], insertLog, intervals = {}, setIntervals }) {
 
   const safeTemperatures = vitals?.temperatures || [];
   const safeAlarms = medications?.alarms || [];
@@ -20,47 +18,6 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
   };
 
   const tempStatus = latestTemp ? getTempStatus(latestTemp.value) : null;
-
-  // Real-time calculation for Cooling Gel Progress & Timer
-  useEffect(() => {
-    if (!gelTimer) {
-      setGelProgress(0);
-      setGelTimeLeft('');
-      return;
-    }
-
-    const updateTimer = () => {
-      const now = new Date();
-      const start = parseISO(gelTimer.appliedAt);
-      const end = parseISO(gelTimer.expiresAt);
-      
-      const totalSec = differenceInSeconds(end, start);
-      const remainingSec = differenceInSeconds(end, now);
-      
-      if (remainingSec <= 0) {
-        setGelProgress(0);
-        setGelTimeLeft('Expired!');
-      } else {
-        const pct = Math.max(0, Math.min(100, (remainingSec / totalSec) * 100));
-        setGelProgress(pct);
-
-        const h = Math.floor(remainingSec / 3600);
-        const m = Math.floor((remainingSec % 3600) / 60);
-        const s = remainingSec % 60;
-        setGelTimeLeft(`${h}h ${m}m ${s}s`);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [gelTimer]);
-
-  // SVG Progress Ring Specs
-  const radius = 50;
-  const strokeWidth = 8;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (gelProgress / 100) * circumference;
 
   // ---------- Shift Summary Logic ----------
   const [timeFilter, setTimeFilter] = useState('3h'); // '3h', '6h', 'nurse'
@@ -682,67 +639,6 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
             </div>
           )}
         </div>
-      </div>
-
-      {/* Cooling Gel status */}
-      <div className="card">
-        <h2 className="card-title">
-          <Droplets size={20} className="text-info" /> 
-          Cooling Gel Timer
-        </h2>
-        {gelTimer ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            {/* SVG Progress Ring */}
-            <div className="progress-ring-container">
-              <svg width="120" height="120">
-                <circle
-                  stroke="var(--border)"
-                  fill="transparent"
-                  strokeWidth={strokeWidth}
-                  r={radius}
-                  cx="60"
-                  cy="60"
-                />
-                <circle
-                  stroke="var(--info)"
-                  fill="transparent"
-                  strokeWidth={strokeWidth}
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  r={radius}
-                  cx="60"
-                  cy="60"
-                  style={{ transition: 'stroke-dashoffset 1s linear', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
-                />
-              </svg>
-              <div className="progress-text" style={{ color: 'var(--info)' }}>
-                {Math.round(gelProgress)}%
-                <span>Left</span>
-              </div>
-            </div>
-
-            {/* Details */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-main)', fontVariantNumeric: 'tabular-nums' }}>
-                {gelTimeLeft}
-              </div>
-              <div className="timestamp" style={{ fontSize: '0.85rem' }}>
-                Applied: <strong>{format(parseISO(gelTimer.appliedAt), 'hh:mm a')}</strong>
-              </div>
-              <div className="timestamp" style={{ fontSize: '0.85rem' }}>
-                Expires: <strong>{format(parseISO(gelTimer.expiresAt), 'hh:mm a')}</strong>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0', gap: '12px' }}>
-            <p className="timestamp" style={{ textAlign: 'center' }}>No cooling gel timer currently running.</p>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', margin: '0 16px' }}>
-              Apply cooling gel to log progress and sound alerts when it's time to replace.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Staff Visit FAB */}

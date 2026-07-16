@@ -23,7 +23,6 @@ function App() {
     alarms: []
   });
   
-  const [gelTimer, setGelTimer, gelReady] = useSupabase('axell_gel_timer', null);
   const [rounds, setRounds, roundsReady] = useSupabase('axell_rounds', []);
   const [intervals, setIntervals, intervalsReady] = useSupabase('axell_intervals', {});
 
@@ -50,18 +49,12 @@ function App() {
         return changed ? { ...prev, alarms: updatedAlarms } : prev;
       });
       
-      // Check Gel Timer
-      if (gelTimer && !gelTimer.notified && new Date(gelTimer.expiresAt) <= now) {
-        sendNotification("Change Fever Gel!", "The cooling gel timer has expired.");
-        setGelTimer(prev => ({ ...prev, notified: true }));
-      }
-      
-    }, 5000); // Check every 5 seconds for snappier notifications
+    }, 5000);
     
     return () => clearInterval(interval);
-  }, [gelTimer, setMedications, setGelTimer]);
+  }, [setMedications]);
 
-  if (!vitalsReady || !medsReady || !gelReady || !roundsReady || !logsReady) {
+  if (!vitalsReady || !medsReady || !roundsReady || !logsReady) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', background: 'var(--background)' }}>
         <div className="progress-ring-container" style={{ margin: '0 0 20px 0' }}>
@@ -77,15 +70,15 @@ function App() {
   const renderView = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
+        return <DashboardView vitals={vitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
       case 'meds':
         return <MedicationsView medications={medications} setMedications={setMedications} insertLog={insertLog} />;
       case 'vitals':
         return <VitalsView vitals={vitals} setVitals={setVitals} insertLog={insertLog} />;
       case 'tracker':
-        return <TrackerView gelTimer={gelTimer} setGelTimer={setGelTimer} rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
+        return <TrackerView rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
       default:
-        return <DashboardView vitals={vitals} medications={medications} gelTimer={gelTimer} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
+        return <DashboardView vitals={vitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
     }
   };
 
