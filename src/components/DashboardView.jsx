@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle, Stethoscope, Mic, MicOff, X, TrendingUp, Flame, Timer } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
-export default function DashboardView({ vitals, medications, healthLogs = [], insertLog, intervals = {}, setIntervals }) {
+export default function DashboardView({ vitals, setVitals, medications, healthLogs = [], insertLog, intervals = {}, setIntervals }) {
 
   const safeTemperatures = vitals?.temperatures || [];
   const safeAlarms = medications?.alarms || [];
@@ -115,6 +116,16 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
   const handleQuickDiaperLog = async (type, details = null) => {
     if (insertLog) {
       await insertLog({ category: 'diaper', type, details });
+      
+      if (setVitals) {
+        const uiType = type === 'pee' ? 'Urine' : type === 'poop' ? 'Poop' : 'Both';
+        const newDiaper = { id: uuidv4(), type: uiType, time: new Date().toISOString() };
+        setVitals(prev => ({
+          ...prev,
+          diapers: [newDiaper, ...(prev?.diapers || [])]
+        }));
+      }
+
       setToastMessage(`✅ ${type === 'pee' ? 'Wet' : 'Dirty'} Diaper Logged!`);
       setTimeout(() => setToastMessage(''), 2500);
       setDiaperModalType(null);

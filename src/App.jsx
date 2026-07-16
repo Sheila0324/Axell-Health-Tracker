@@ -70,7 +70,7 @@ function App() {
   const renderView = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView vitals={vitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
+        return <DashboardView vitals={vitals} setVitals={setVitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
       case 'meds':
         return <MedicationsView medications={medications} setMedications={setMedications} insertLog={insertLog} />;
       case 'vitals':
@@ -78,7 +78,7 @@ function App() {
       case 'tracker':
         return <TrackerView rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
       default:
-        return <DashboardView vitals={vitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
+        return <DashboardView vitals={vitals} setVitals={setVitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
     }
   };
 
