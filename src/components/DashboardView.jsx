@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { format, parseISO, differenceInSeconds } from 'date-fns';
-import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle, Stethoscope, Mic, MicOff, X } from 'lucide-react';
+import { format, parseISO, differenceInSeconds, differenceInMinutes } from 'date-fns';
+import { Thermometer, Droplets, Clock, Activity, ClipboardCopy, Baby, CalendarClock, CheckCircle, Stethoscope, Mic, MicOff, X, TrendingUp, Flame, Timer } from 'lucide-react';
 
 export default function DashboardView({ vitals, medications, gelTimer, healthLogs = [], insertLog, intervals = {}, setIntervals }) {
   const [gelProgress, setGelProgress] = useState(100);
@@ -296,6 +296,96 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
   };
   // ---------------------------------------------
 
+  // ---------- Fever Episode Analysis ----------
+  const feverAnalysis = useMemo(() => {
+    const temps = [...(vitals?.temperatures || [])]
+      .map(t => ({ ...t, time: parseISO(t.time), value: parseFloat(t.value) }))
+      .sort((a, b) => a.time - b.time); // oldest first
+
+    if (temps.length === 0) return { episodes: [], hoursSinceLastFever: null, avgIntervalHours: null, currentlyFevering: false };
+
+    const FEVER_THRESHOLD = 38.0;
+    const GAP_HOURS = 4; // readings > 4h apart = new episode
+
+    // Group into episodes: consecutive fever readings within GAP_HOURS of each other
+    const episodes = [];
+    let currentEpisode = null;
+
+    temps.forEach((t) => {
+      const isFever = t.value >= FEVER_THRESHOLD;
+      if (isFever) {
+        if (!currentEpisode) {
+          currentEpisode = { start: t.time, end: t.time, peak: t.value, readings: [t] };
+        } else {
+          const gapMins = differenceInMinutes(t.time, currentEpisode.end);
+          if (gapMins <= GAP_HOURS * 60) {
+            // Same episode — extend
+            currentEpisode.end = t.time;
+            currentEpisode.peak = Math.max(currentEpisode.peak, t.value);
+            currentEpisode.readings.push(t);
+          } else {
+            // New episode
+            episodes.push(currentEpisode);
+            currentEpisode = { start: t.time, end: t.time, peak: t.value, readings: [t] };
+          }
+        }
+      } else {
+        // Normal temp — close the episode if one was open
+        if (currentEpisode) {
+          episodes.push(currentEpisode);
+          currentEpisode = null;
+        }
+      }
+    });
+    if (currentEpisode) episodes.push(currentEpisode);
+
+    // Compute stats per episode
+    const enriched = episodes.map((ep, i) => {
+      const durationMins = differenceInMinutes(ep.end, ep.start);
+      return { ...ep, durationMins, index: i + 1 };
+    });
+
+    // Currently fevering? last reading >= threshold
+    const lastTemp = temps[temps.length - 1];
+    const currentlyFevering = lastTemp ? lastTemp.value >= FEVER_THRESHOLD : false;
+
+    // Hours since last fever ended (end of most recent episode)
+    const lastEpisode = enriched[enriched.length - 1];
+    const hoursSinceLastFever = lastEpisode && !currentlyFevering
+      ? differenceInMinutes(new Date(), lastEpisode.end) / 60
+      : null;
+
+    // Average interval between episode starts
+    let avgIntervalHours = null;
+    if (enriched.length >= 2) {
+      let totalGap = 0;
+      for (let i = 1; i < enriched.length; i++) {
+        totalGap += differenceInMinutes(enriched[i].start, enriched[i - 1].start);
+      }
+      avgIntervalHours = totalGap / (enriched.length - 1) / 60;
+    }
+
+    return { episodes: enriched.reverse(), hoursSinceLastFever, avgIntervalHours, currentlyFevering };
+  }, [vitals?.temperatures]);
+
+  const [feverTick, setFeverTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setFeverTick(v => v + 1), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  const liveSinceFever = useMemo(() => {
+    const temps = [...(vitals?.temperatures || [])]
+      .map(t => ({ ...t, time: parseISO(t.time), value: parseFloat(t.value) }))
+      .sort((a, b) => a.time - b.time);
+    const lastFeverReading = [...temps].reverse().find(t => t.value >= 38.0);
+    if (!lastFeverReading) return null;
+    const mins = differenceInMinutes(new Date(), lastFeverReading.time);
+    return mins;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vitals?.temperatures, feverTick]);
+  // -------------------------------------------
+
   return (
     <div>
 
@@ -378,6 +468,157 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
         <div className="timestamp" style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.75rem' }}>
           Tracking since {format(shiftSummary.startTime, 'h:mm a')}
         </div>
+      </div>
+
+      {/* Fever Analysis Card */}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 className="card-title" style={{ margin: 0 }}>
+            <Flame size={20} style={{ color: '#f97316' }} />
+            Fever Analysis
+          </h2>
+          {feverAnalysis.currentlyFevering ? (
+            <span style={{
+              background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+              border: '1px solid #ef4444', borderRadius: '20px',
+              padding: '4px 12px', fontSize: '0.75rem', fontWeight: '800',
+              display: 'flex', alignItems: 'center', gap: '5px', animation: 'pulse 1.5s ease infinite'
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+              FEVER ACTIVE
+            </span>
+          ) : liveSinceFever !== null ? (
+            <span style={{
+              background: 'rgba(34,197,94,0.12)', color: '#22c55e',
+              border: '1px solid rgba(34,197,94,0.3)', borderRadius: '20px',
+              padding: '4px 12px', fontSize: '0.75rem', fontWeight: '700'
+            }}>
+              Fever-free
+            </span>
+          ) : null}
+        </div>
+
+        {feverAnalysis.episodes.length === 0 ? (
+          <p className="timestamp" style={{ textAlign: 'center', padding: '16px 0' }}>
+            No fever episodes detected yet.
+          </p>
+        ) : (
+          <>
+            {/* Summary Stats Row */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              {/* Since last fever */}
+              <div style={{
+                flex: 1, background: 'var(--input-bg)', borderRadius: 'var(--radius-sm)',
+                padding: '14px 12px', border: '1px solid var(--border)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'
+              }}>
+                <Timer size={18} style={{ color: '#6366f1' }} />
+                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-main)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+                  {liveSinceFever !== null
+                    ? feverAnalysis.currentlyFevering
+                      ? '—'
+                      : `${Math.floor(liveSinceFever / 60)}h ${liveSinceFever % 60}m`
+                    : '—'}
+                </div>
+                <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+                  {feverAnalysis.currentlyFevering ? 'Currently Fevering' : 'Since Last Fever'}
+                </span>
+              </div>
+
+              {/* Total episodes */}
+              <div style={{
+                flex: 1, background: 'var(--input-bg)', borderRadius: 'var(--radius-sm)',
+                padding: '14px 12px', border: '1px solid var(--border)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'
+              }}>
+                <Flame size={18} style={{ color: '#f97316' }} />
+                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-main)', lineHeight: 1.1 }}>
+                  {feverAnalysis.episodes.length}
+                </div>
+                <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+                  Fever Episodes
+                </span>
+              </div>
+
+              {/* Avg interval */}
+              <div style={{
+                flex: 1, background: 'var(--input-bg)', borderRadius: 'var(--radius-sm)',
+                padding: '14px 12px', border: '1px solid var(--border)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'
+              }}>
+                <TrendingUp size={18} style={{ color: '#a855f7' }} />
+                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-main)', lineHeight: 1.1 }}>
+                  {feverAnalysis.avgIntervalHours !== null
+                    ? `${feverAnalysis.avgIntervalHours.toFixed(1)}h`
+                    : '—'}
+                </div>
+                <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+                  Avg Interval
+                </span>
+              </div>
+            </div>
+
+            {/* Episode Timeline */}
+            <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '10px' }}>
+              Episode History
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {feverAnalysis.episodes.map((ep, i) => {
+                const isFirst = i === 0;
+                const durationH = Math.floor(ep.durationMins / 60);
+                const durationM = ep.durationMins % 60;
+                const durationStr = ep.durationMins < 1
+                  ? '< 1 min'
+                  : durationH > 0
+                    ? `${durationH}h ${durationM}m`
+                    : `${durationM}m`;
+                const isOngoing = isFirst && feverAnalysis.currentlyFevering;
+                return (
+                  <div key={i} style={{
+                    background: isOngoing ? 'rgba(239,68,68,0.08)' : 'var(--input-bg)',
+                    border: `1px solid ${isOngoing ? 'rgba(239,68,68,0.4)' : 'var(--border)'}`,
+                    borderLeft: `4px solid ${isOngoing ? '#ef4444' : '#f97316'}`,
+                    borderRadius: 'var(--radius-sm)', padding: '12px 14px',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: '800', color: isOngoing ? '#ef4444' : '#f97316', textTransform: 'uppercase' }}>
+                            Episode {feverAnalysis.episodes.length - i}
+                          </span>
+                          {isOngoing && (
+                            <span style={{ fontSize: '0.65rem', background: '#ef4444', color: 'white', padding: '1px 6px', borderRadius: '8px', fontWeight: '700' }}>
+                              ONGOING
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          <span style={{ color: 'var(--text-main)', fontWeight: '700' }}>{format(ep.start, 'MMM d, hh:mm a')}</span>
+                          {' '}→{' '}
+                          {isOngoing
+                            ? <span style={{ color: '#ef4444', fontWeight: '700' }}>now</span>
+                            : <span style={{ color: 'var(--text-main)', fontWeight: '700' }}>{format(ep.end, 'hh:mm a')}</span>
+                          }
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '2px' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            ⏱ <strong style={{ color: 'var(--text-main)' }}>{durationStr}</strong>
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            🌡 Peak <strong style={{ color: '#ef4444' }}>{ep.peak.toFixed(1)}°C</strong>
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            📊 <strong style={{ color: 'var(--text-main)' }}>{ep.readings.length}</strong> readings
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Quick Diaper Logger */}
