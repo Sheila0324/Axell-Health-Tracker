@@ -22,6 +22,40 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
   // ---------- Shift Summary Logic ----------
   const [timeFilter, setTimeFilter] = useState('nurse'); // 'nurse', '3h', '6h'
   const [copySuccess, setCopySuccess] = useState(false);
+  const [nurseCheckToast, setNurseCheckToast] = useState(false);
+
+  const handleNurseCheck = async () => {
+    if (!insertLog) return;
+    const lastNurseLog = healthLogs.find(
+      l => l.category === 'note' && (l.type === 'Nurse' || l.type === 'Nurse Visit')
+    );
+    const startTime = lastNurseLog ? parseISO(lastNurseLog.created_at) : new Date(0);
+    
+    let hydration = 0;
+    let wet = 0;
+    let dry = 0;
+    
+    healthLogs.forEach(l => {
+      const logTime = parseISO(l.created_at);
+      if (logTime > startTime) {
+        if (l.category === 'water') {
+          hydration += Number(l.value) || 0;
+        } else if (l.category === 'diaper') {
+          if (l.type === 'pee' || l.type === 'both') wet++;
+          if (l.type === 'poop' || l.type === 'both') dry++;
+        }
+      }
+    });
+
+    await insertLog({
+      category: 'note',
+      type: 'Nurse Visit',
+      details: `💧 Water: ${hydration}ml | 👶 Diapers: ${wet} WET, ${dry} DIRTY`
+    });
+
+    setNurseCheckToast(true);
+    setTimeout(() => setNurseCheckToast(false), 2500);
+  };
 
   const shiftSummary = useMemo(() => {
     let startTime = new Date();
@@ -277,20 +311,39 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
             <Activity size={20} className="text-primary" /> 
             Shift Summary
           </h2>
-          <button 
-            onClick={handleCopySummary}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: '6px', 
-              background: 'var(--input-bg)', border: '1px solid var(--border)', 
-              color: copySuccess ? 'var(--primary)' : 'var(--text-main)', 
-              padding: '6px 12px', borderRadius: 'var(--radius-sm)', 
-              cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <ClipboardCopy size={14} /> 
-            {copySuccess ? 'Copied!' : 'Copy'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button 
+              onClick={handleNurseCheck}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '6px', 
+                background: nurseCheckToast ? 'var(--primary)' : 'var(--input-bg)', 
+                border: `1px solid ${nurseCheckToast ? 'var(--primary)' : 'var(--border)'}`, 
+                color: nurseCheckToast ? 'white' : 'var(--text-main)', 
+                padding: '6px 12px', borderRadius: 'var(--radius-sm)', 
+                cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => { if (!nurseCheckToast) { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; } }}
+              onMouseOut={(e) => { if (!nurseCheckToast) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-main)'; } }}
+            >
+              <CheckCircle size={14} /> 
+              {nurseCheckToast ? 'Logged! ✓' : 'Log Nurse Check'}
+            </button>
+            <button 
+              onClick={handleCopySummary}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '6px', 
+                background: 'var(--input-bg)', border: '1px solid var(--border)', 
+                color: copySuccess ? 'var(--primary)' : 'var(--text-main)', 
+                padding: '6px 12px', borderRadius: 'var(--radius-sm)', 
+                cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <ClipboardCopy size={14} /> 
+              {copySuccess ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
         </div>
 
         {/* Time Toggles */}
