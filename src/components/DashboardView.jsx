@@ -590,6 +590,29 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
               <div className="timestamp" style={{ marginTop: 'auto' }}>
                 {new Date(nextMedication.time) <= new Date() ? 'PAST DUE!' : 'Upcoming Alert'}
               </div>
+              <button
+                onClick={async () => {
+                  if (!insertLog) return;
+                  await insertLog({ category: 'medicine', type: 'dose', details: nextMedication.name });
+                  setToastMessage(`✅ ${nextMedication.name} dose logged!`);
+                  setTimeout(() => setToastMessage(''), 2500);
+                }}
+                style={{
+                  marginTop: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  background: 'linear-gradient(135deg, var(--primary), #3b82f6)',
+                  color: 'white', border: 'none',
+                  padding: '10px 8px', borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer', fontSize: '0.82rem', fontWeight: '700',
+                  boxShadow: '0 2px 8px rgba(59,130,246,0.35)',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                <CheckCircle size={14} /> Log Dose Now
+              </button>
             </div>
           ) : (
             <div style={{ padding: '10px 0' }}>
