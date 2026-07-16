@@ -157,13 +157,7 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
   const handleSaveStaffLog = async () => {
     if (!insertLog) return;
     const checklistStr = staffChecklist.length > 0 ? `[${staffChecklist.join(', ')}]` : '';
-    let details = `${checklistStr} ${staffNotes}`.trim();
-
-    // Auto-include water total for Nurse visits
-    if (visitorType === 'Nurse') {
-      const waterPrefix = `💧 Water since last nurse check: ${waterSinceLastNurse}ml`;
-      details = details ? `${waterPrefix} | ${details}` : waterPrefix;
-    }
+    const details = `${checklistStr} ${staffNotes}`.trim();
     
     await insertLog({
       category: 'note',
@@ -171,7 +165,7 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
       details: details || 'Routine Visit'
     });
     
-    setToastMessage(`✅ ${visitorType} Visit Logged!`);
+    setToastMessage(`\u2705 ${visitorType} Visit Logged!`);
     setTimeout(() => setToastMessage(''), 2500);
     
     setShowStaffModal(false);
@@ -180,19 +174,7 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
     setStaffNotes('');
     stopDictating();
   };
-  // ----------------------------------------------
-
-  // ---------- Water since last nurse check ----------
-  const waterSinceLastNurse = useMemo(() => {
-    const lastNurseLog = healthLogs.find(
-      l => l.category === 'note' && (l.type === 'Nurse' || l.type === 'Nurse Visit')
-    );
-    const startTime = lastNurseLog ? parseISO(lastNurseLog.created_at) : new Date(0);
-    return healthLogs
-      .filter(l => l.category === 'water' && parseISO(l.created_at) > startTime)
-      .reduce((sum, l) => sum + (Number(l.value) || 0), 0);
-  }, [healthLogs]);
-  // ------------------------------------------------------
+  // --------------------------------------------------
 
 
   // ---------- Fever Episode Analysis ----------
@@ -714,28 +696,6 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
                 ))}
               </div>
             </div>
-
-            {/* Water Summary Banner — shown only for Nurse visits */}
-            {visitorType === 'Nurse' && (
-              <div style={{
-                background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.35)',
-                borderRadius: 'var(--radius-sm)', padding: '12px 16px', marginBottom: '20px',
-                display: 'flex', alignItems: 'center', gap: '10px'
-              }}>
-                <Droplets size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Water since last nurse check
-                  </div>
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-main)' }}>
-                    {waterSinceLastNurse} <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '600' }}>ml</span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Will be auto-saved with this log
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Quick Checklist</label>
