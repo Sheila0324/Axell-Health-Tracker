@@ -8,8 +8,6 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
   const [water, setWater] = useState('');
   const [promptData, setPromptData] = useState(null);
   const [showAllTemps, setShowAllTemps] = useState(false);
-  const [nurseCheckToast, setNurseCheckToast] = useState(false);
-
   // Water total since last nurse check
   const waterSinceLastNurse = useMemo(() => {
     const lastNurseLog = healthLogs.find(
@@ -37,17 +35,6 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
     });
     return { wet, dirty };
   }, [healthLogs]);
-
-  const handleNurseCheck = async () => {
-    if (!insertLog) return;
-    await insertLog({
-      category: 'note',
-      type: 'Nurse Visit',
-      details: `💧 Water: ${waterSinceLastNurse}ml | 👶 Diapers: ${diapersSinceLastNurse.wet} WET, ${diapersSinceLastNurse.dirty} DIRTY`
-    });
-    setNurseCheckToast(true);
-    setTimeout(() => setNurseCheckToast(false), 2500);
-  };
 
   const logTemp = (e) => {
     if (e) e.preventDefault();
@@ -274,7 +261,7 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
         {/* Nurse Check Summary Bar */}
         <div style={{
           marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '14px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -284,23 +271,6 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
               {waterSinceLastNurse} <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>ml</span>
             </span>
           </div>
-          <button
-            onClick={handleNurseCheck}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: nurseCheckToast ? 'var(--primary)' : 'var(--input-bg)',
-              color: nurseCheckToast ? 'white' : 'var(--text-main)',
-              border: `1px solid ${nurseCheckToast ? 'var(--primary)' : 'var(--border)'}`,
-              padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer', fontSize: '0.82rem', fontWeight: '700',
-              transition: 'all 0.2s ease', whiteSpace: 'nowrap',
-            }}
-            onMouseOver={(e) => { if (!nurseCheckToast) { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; } }}
-            onMouseOut={(e) => { if (!nurseCheckToast) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-main)'; } }}
-          >
-            <CheckCircle size={14} />
-            {nurseCheckToast ? 'Logged! ✓' : 'Log Nurse Check'}
-          </button>
         </div>
       </div>
 
@@ -358,7 +328,7 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
         {/* Nurse Check Summary Bar */}
         <div style={{
           marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '14px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -370,23 +340,6 @@ export default function VitalsView({ vitals, setVitals, insertLog, healthLogs = 
               {diapersSinceLastNurse.dirty} <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>DIRTY</span>
             </span>
           </div>
-          <button
-            onClick={handleNurseCheck}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: nurseCheckToast ? 'var(--primary)' : 'var(--input-bg)',
-              color: nurseCheckToast ? 'white' : 'var(--text-main)',
-              border: `1px solid ${nurseCheckToast ? 'var(--primary)' : 'var(--border)'}`,
-              padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer', fontSize: '0.82rem', fontWeight: '700',
-              transition: 'all 0.2s ease', whiteSpace: 'nowrap',
-            }}
-            onMouseOver={(e) => { if (!nurseCheckToast) { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; } }}
-            onMouseOut={(e) => { if (!nurseCheckToast) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-main)'; } }}
-          >
-            <CheckCircle size={14} />
-            {nurseCheckToast ? 'Logged! ✓' : 'Log Nurse Check'}
-          </button>
         </div>
       </div>
 
