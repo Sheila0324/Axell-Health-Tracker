@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pill, Plus, Bell, Trash2, Edit2, Calendar, Clock } from 'lucide-react';
+import { Pill, Plus, Bell, Trash2, Edit2, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,6 +7,7 @@ export default function MedicationsView({ medications, setMedications, insertLog
   const [medName, setMedName] = useState('');
   const [alarmTime, setAlarmTime] = useState('');
   const [promptData, setPromptData] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Custom date/time log
   const [showCustomLog, setShowCustomLog] = useState(false);
@@ -248,7 +249,18 @@ export default function MedicationsView({ medications, setMedications, insertLog
       </div>
 
       {/* Active Alarms */}
-      <div className="card">
+      <div className="card" style={{ position: 'relative' }}>
+        {toastMessage && (
+          <div style={{
+            position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)',
+            background: 'var(--primary)', color: 'white', padding: '8px 16px',
+            borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)', zIndex: 10,
+            whiteSpace: 'nowrap',
+          }}>
+            {toastMessage}
+          </div>
+        )}
         <h2 className="card-title" style={{ justifyContent: 'space-between' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Bell size={20} className="text-warning" /> Alarms
@@ -265,10 +277,32 @@ export default function MedicationsView({ medications, setMedications, insertLog
               <div>
                 <strong style={{ fontSize: '0.98rem' }}>{med.name}</strong>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span className="timestamp" style={{ fontWeight: '700', color: 'var(--primary)', background: 'var(--input-bg)', padding: '4px 8px', borderRadius: '6px' }}>
                   {format(parseISO(med.time), 'hh:mm a')}
                 </span>
+                <button
+                  title="Log dose now"
+                  onClick={async () => {
+                    if (!insertLog) return;
+                    await insertLog({ category: 'medicine', type: 'dose', details: med.name });
+                    setToastMessage(`✅ ${med.name} logged!`);
+                    setTimeout(() => setToastMessage(''), 2500);
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    background: 'var(--primary)', color: 'white', border: 'none',
+                    padding: '5px 10px', borderRadius: '20px',
+                    cursor: 'pointer', fontSize: '0.72rem', fontWeight: '700',
+                    letterSpacing: '0.3px',
+                    boxShadow: '0 2px 6px rgba(99,102,241,0.35)',
+                    transition: 'all 0.18s ease', whiteSpace: 'nowrap',
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <CheckCircle size={12} /> Log
+                </button>
                 <Trash2 
                   size={16} 
                   className="text-white" 

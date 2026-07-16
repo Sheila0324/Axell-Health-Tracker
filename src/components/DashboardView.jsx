@@ -573,46 +573,45 @@ export default function DashboardView({ vitals, medications, gelTimer, healthLog
             Next Meds
           </h2>
           {nextMedication ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontWeight: '800', fontSize: '1.05rem', color: 'var(--text-main)' }}>
-                  {nextMedication.name}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                  {new Date(nextMedication.time) <= new Date() && (
-                    <span className="alarm-pulse" style={{ marginRight: '6px' }} />
-                  )}
-                  <span className="timestamp" style={{ fontWeight: '700', color: 'var(--primary)' }}>
-                    {format(parseISO(nextMedication.time), 'hh:mm a')}
-                  </span>
-                </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontWeight: '800', fontSize: '1.05rem', color: 'var(--text-main)', wordBreak: 'break-word' }}>
+                {nextMedication.name}
               </div>
-              <div className="timestamp" style={{ marginTop: 'auto' }}>
-                {new Date(nextMedication.time) <= new Date() ? 'PAST DUE!' : 'Upcoming Alert'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {new Date(nextMedication.time) <= new Date() && (
+                  <span className="alarm-pulse" />
+                )}
+                <span className="timestamp" style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '0.9rem' }}>
+                  {format(parseISO(nextMedication.time), 'hh:mm a')}
+                </span>
               </div>
-              <button
-                onClick={async () => {
-                  if (!insertLog) return;
-                  await insertLog({ category: 'medicine', type: 'dose', details: nextMedication.name });
-                  setToastMessage(`✅ ${nextMedication.name} dose logged!`);
-                  setTimeout(() => setToastMessage(''), 2500);
-                }}
-                style={{
-                  marginTop: '8px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                  background: 'linear-gradient(135deg, var(--primary), #3b82f6)',
-                  color: 'white', border: 'none',
-                  padding: '10px 8px', borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer', fontSize: '0.82rem', fontWeight: '700',
-                  boxShadow: '0 2px 8px rgba(59,130,246,0.35)',
-                  transition: 'all 0.2s ease',
-                  width: '100%',
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
-              >
-                <CheckCircle size={14} /> Log Dose Now
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                <span className="timestamp" style={{ fontSize: '0.75rem' }}>
+                  {new Date(nextMedication.time) <= new Date() ? '⚠️ PAST DUE' : 'Upcoming'}
+                </span>
+                <button
+                  title="Log dose now"
+                  onClick={async () => {
+                    if (!insertLog) return;
+                    await insertLog({ category: 'medicine', type: 'dose', details: nextMedication.name });
+                    setToastMessage(`✅ ${nextMedication.name} logged!`);
+                    setTimeout(() => setToastMessage(''), 2500);
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    background: 'var(--primary)', color: 'white', border: 'none',
+                    padding: '5px 10px', borderRadius: '20px',
+                    cursor: 'pointer', fontSize: '0.72rem', fontWeight: '700',
+                    letterSpacing: '0.3px',
+                    boxShadow: '0 2px 6px rgba(99,102,241,0.4)',
+                    transition: 'all 0.18s ease', whiteSpace: 'nowrap',
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <CheckCircle size={12} /> Log
+                </button>
+              </div>
             </div>
           ) : (
             <div style={{ padding: '10px 0' }}>
