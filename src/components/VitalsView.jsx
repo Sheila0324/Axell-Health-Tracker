@@ -140,7 +140,6 @@ export default function VitalsView({ vitals, setVitals, insertLog, deleteLog, up
         }
       }
     }
-    }
     setPromptData(null);
   };
 
