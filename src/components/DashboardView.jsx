@@ -20,7 +20,7 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
   const tempStatus = latestTemp ? getTempStatus(latestTemp.value) : null;
 
   // ---------- Shift Summary Logic ----------
-  const [timeFilter, setTimeFilter] = useState('3h'); // '3h', '6h', 'nurse'
+  const [timeFilter, setTimeFilter] = useState('nurse'); // 'nurse', '3h', '6h'
   const [copySuccess, setCopySuccess] = useState(false);
 
   const shiftSummary = useMemo(() => {
@@ -325,8 +325,8 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
             <div style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--text-main)' }}>
               {shiftSummary.hydration} <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>ml</span>
             </div>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Total Hydration
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+              {timeFilter === 'nurse' ? 'Water (Nurse Check)' : 'Total Hydration'}
             </span>
           </div>
           <div style={{ background: 'var(--input-bg)', borderRadius: 'var(--radius-sm)', padding: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
@@ -341,13 +341,16 @@ export default function DashboardView({ vitals, medications, healthLogs = [], in
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>DIRTY</span>
               </div>
             </div>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Diaper Changes
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+              {timeFilter === 'nurse' ? 'Diapers (Nurse Check)' : 'Diaper Changes'}
             </span>
           </div>
         </div>
         <div className="timestamp" style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.75rem' }}>
-          Tracking since {format(shiftSummary.startTime, 'h:mm a')}
+          {timeFilter === 'nurse'
+            ? `Since last nurse check at ${format(shiftSummary.startTime, 'h:mm a')}`
+            : `Tracking since ${format(shiftSummary.startTime, 'h:mm a')}`
+          }
         </div>
       </div>
 
