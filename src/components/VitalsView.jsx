@@ -265,7 +265,7 @@ export default function VitalsView({ vitals, setVitals, insertLog }) {
                   <strong style={{ fontSize: '0.98rem' }}>{d.type}</strong>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span className="timestamp">{format(parseISO(d.time), 'hh:mm a')}</span>
+                  <span className="timestamp">{format(parseISO(d.time), 'MMM d, hh:mm a')}</span>
                   <Trash2 
                     size={15} 
                     className="text-white" 
