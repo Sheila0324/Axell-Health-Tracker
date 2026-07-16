@@ -76,7 +76,7 @@ function App() {
       case 'vitals':
         return <VitalsView vitals={vitals} setVitals={setVitals} insertLog={insertLog} />;
       case 'tracker':
-        return <TrackerView rounds={rounds} setRounds={setRounds} insertLog={insertLog} />;
+        return <TrackerView rounds={rounds} setRounds={setRounds} insertLog={insertLog} healthLogs={healthLogs} />;
       default:
         return <DashboardView vitals={vitals} medications={medications} healthLogs={healthLogs} insertLog={insertLog} intervals={intervals} setIntervals={setIntervals} />;
     }

@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
-import { Users, Trash2, Edit2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Users, Trash2, Edit2, Droplets } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function TrackerView({ rounds, setRounds, insertLog }) {
+export default function TrackerView({ rounds, setRounds, insertLog, healthLogs = [] }) {
   const [roundNote, setRoundNote] = useState('');
   const [promptData, setPromptData] = useState(null);
 
+  // Water since last nurse check
+  const waterSinceLastNurse = useMemo(() => {
+    const lastNurseLog = healthLogs.find(
+      l => l.category === 'note' && (l.type === 'Nurse' || l.type === 'Nurse Visit')
+    );
+    const startTime = lastNurseLog ? parseISO(lastNurseLog.created_at) : new Date(0);
+    return healthLogs
+      .filter(l => l.category === 'water' && parseISO(l.created_at) > startTime)
+      .reduce((sum, l) => sum + (Number(l.value) || 0), 0);
+  }, [healthLogs]);
+
   const logRound = (person) => {
-    const newRound = { id: uuidv4(), person, note: roundNote.trim(), time: new Date().toISOString() };
+    let note = roundNote.trim();
+    // Auto-prepend water total for nurse visits
+    if (person === 'Nurse Visit') {
+      const waterNote = `💧 Water since last nurse check: ${waterSinceLastNurse}ml`;
+      note = note ? `${waterNote} | ${note}` : waterNote;
+    }
+    const newRound = { id: uuidv4(), person, note, time: new Date().toISOString() };
     setRounds(prev => [newRound, ...(prev || [])]);
-    insertLog({ category: 'note', type: person, details: roundNote.trim() || null });
+    insertLog({ category: 'note', type: person, details: note || null });
     setRoundNote('');
   };
 
@@ -43,9 +60,17 @@ export default function TrackerView({ rounds, setRounds, insertLog }) {
           />
         </div>
         <div className="grid-2-no-pad" style={{ marginBottom: '20px' }}>
-          <button className="btn btn-secondary" onClick={() => logRound('Nurse Visit')} style={{ borderLeft: '4px solid var(--primary-start)' }}>
-            Nurse Round
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <button className="btn btn-secondary" onClick={() => logRound('Nurse Visit')} style={{ borderLeft: '4px solid var(--primary-start)' }}>
+              Nurse Round
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '4px' }}>
+              <Droplets size={13} style={{ color: 'var(--primary)' }} />
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                Will log <strong style={{ color: 'var(--primary)' }}>{waterSinceLastNurse}ml</strong> water
+              </span>
+            </div>
+          </div>
           <button className="btn btn-secondary" onClick={() => logRound('Doctor Visit')} style={{ borderLeft: '4px solid var(--accent)' }}>
             Doctor Round
           </button>
